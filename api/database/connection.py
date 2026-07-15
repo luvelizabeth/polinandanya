@@ -1,12 +1,21 @@
 import json
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy import select
+from sqlalchemy.pool import NullPool
 from aiogram.fsm.storage.base import BaseStorage, StorageKey
 
 from api.config import config
 from api.database.models import FSMData, Base
 
-engine = create_async_engine(config.DB_URL, echo=False)
+engine_kwargs = {
+    "echo": False,
+    "poolclass": NullPool,
+}
+
+if "asyncpg" in config.DB_URL:
+    engine_kwargs["connect_args"] = {"statement_cache_size": 0}
+
+engine = create_async_engine(config.DB_URL, **engine_kwargs)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 def make_key(key: StorageKey) -> str:
