@@ -105,9 +105,10 @@ async def show_dreams(message_or_cb):
         dreams = res.scalars().all()
     if not dreams:
         if isinstance(message_or_cb, CallbackQuery):
-            return await message_or_cb.answer("Дневник пока пуст.", show_alert=True)
+            kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Назад", callback_data="dreams_menu")]])
+            return await message_or_cb.message.edit_text("☁️ <b>Дневник пока пуст.</b>", reply_markup=kb)
         else:
-            return await msg.answer("Дневник пока пуст.")
+            return await msg.answer("☁️ <b>Дневник пока пуст.</b>")
         
     grouped = {}
     for d in dreams:
@@ -116,16 +117,31 @@ async def show_dreams(message_or_cb):
         if d.is_voice: grouped[key]["v"] += 1
         else: grouped[key]["t"] += 1
             
-    if isinstance(message_or_cb, CallbackQuery):
-        await message_or_cb.answer("Загружаю список снов...", show_alert=False)
-        await message_or_cb.message.delete()
-        
-    await msg.answer("📖 <b>Список наших сновидений:</b>\n<i>Выбери сон, чтобы прочитать или послушать его.</i>")
-    
+    buttons = []
     for (d_date, u_id), info in grouped.items():
         name = "Даня" if u_id == config.DANILA_ID else "Полина"
-        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="📖 Читать / Слушать", callback_data=f"read_dream_{d_date.isoformat()}_{u_id}")]])
-        await msg.answer(f"📅 <b>{d_date.strftime('%d.%m.%Y')}</b> — Снилось {name}\n<i>Содержит: {info['t']} текст., {info['v']} ГС</i>", reply_markup=kb)
+        btn_text = f"📅 {d_date.strftime('%d.%m.%y')} — {name} ({info['t']} т., {info['v']} ГС)"
+        buttons.append([InlineKeyboardButton(text=btn_text, callback_data=f"read_dream_{d_date.isoformat()}_{u_id}")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="dreams_menu")])
+    
+    text = "📖 <b>Список наших сновидений:</b>\n<i>Выбери сон, чтобы прочитать или послушать его.</i>"
+    kb = InlineKeyboardMarkup(inline_keyboard=buttons)
+    
+    if isinstance(message_or_cb, CallbackQuery):
+        await message_or_cb.message.edit_text(text, reply_markup=kb)
+        await message_or_cb.answer("Загружено", show_alert=False)
+    else:
+        await msg.answer(text, reply_markup=kb)
+
+@router.callback_query(F.data == "dreams_menu")
+async def back_to_dreams_menu(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "☁️ <b>Дневник сновидений</b>\n\n"
+        "Здесь хранятся все наши самые странные, страшные и милые сны. "
+        "Хочешь вспомнить, что нам снилось, или записать свежий сон?",
+        reply_markup=get_dreams_keyboard()
+    )
+    await callback.answer()
 
 @router.callback_query(F.data.startswith("read_dream_"))
 async def read_dream_cb(callback: CallbackQuery, bot: Bot):
@@ -136,8 +152,19 @@ async def read_dream_cb(callback: CallbackQuery, bot: Bot):
         res = await session.execute(select(Dream).where(Dream.user_id == u_id, Dream.date == d_date))
         dreams = res.scalars().all()
     name = "Даня" if u_id == config.DANILA_ID else "Полина"
-    await callback.message.answer(f"💤 <b>Сон {name} от {d_date.strftime('%d.%m.%Y')}:</b>")
+    
+    text = f"💤 <b>Сон {name} от {d_date.strftime('%d.%m.%Y')}:</b>\n\n"
+    voices = []
     for d in dreams:
-        if d.is_voice: await bot.send_voice(callback.message.chat.id, d.content)
-        else: await callback.message.answer(d.content)
+        if d.is_voice:
+            voices.append(d.content)
+        else:
+            text += f"<i>{d.content}</i>\n\n"
+            
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Назад к списку", callback_data="show_dreams")]])
+    await callback.message.edit_text(text, reply_markup=kb)
+    
+    for v in voices:
+        await bot.send_voice(callback.message.chat.id, v)
+        
     await callback.answer("Сон загружен!", show_alert=False)

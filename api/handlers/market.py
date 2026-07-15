@@ -78,18 +78,105 @@ async def process_price(message: Message, state: FSMContext):
 
 @router.message(Command("shop"))
 @router.message(F.text == "🛍️ Магазин чудес")
-async def shop_handler(message: Message):
-    partner_id = config.POLINA_ID if message.from_user.id == config.DANILA_ID else config.DANILA_ID
+async def shop_main_menu(message: Message):
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🎁 Посмотреть лоты партнера", callback_data="shop_partner_lots")],
+        [InlineKeyboardButton(text="📦 Мои лоты", callback_data="shop_my_lots")],
+        [InlineKeyboardButton(text="❌ Свернуть", callback_data="shop_close")]
+    ])
+    await message.answer(
+        "🛍️ <b>Магазин чудес</b>\n\n"
+        "Здесь ты можешь потратить свои ЛапКоины на лоты партнера или управлять своими собственными лотами.",
+        reply_markup=kb
+    )
+
+@router.callback_query(F.data == "shop_main")
+async def shop_main_callback(callback: CallbackQuery):
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🎁 Посмотреть лоты партнера", callback_data="shop_partner_lots")],
+        [InlineKeyboardButton(text="📦 Мои лоты", callback_data="shop_my_lots")],
+        [InlineKeyboardButton(text="❌ Свернуть", callback_data="shop_close")]
+    ])
+    await callback.message.edit_text(
+        "🛍️ <b>Магазин чудес</b>\n\n"
+        "Здесь ты можешь потратить свои ЛапКоины на лоты партнера или управлять своими собственными лотами.",
+        reply_markup=kb
+    )
+    await callback.answer()
+
+@router.callback_query(F.data == "shop_close")
+async def shop_close_callback(callback: CallbackQuery):
+    await callback.message.delete()
+    await callback.answer("Свернуто", show_alert=False)
+
+@router.callback_query(F.data == "shop_partner_lots")
+async def shop_partner_lots(callback: CallbackQuery):
+    partner_id = config.POLINA_ID if callback.from_user.id == config.DANILA_ID else config.DANILA_ID
     async with async_session() as session:
         result = await session.execute(select(Lot).where(Lot.owner_id == partner_id, Lot.is_active == True))
         lots = result.scalars().all()
+        
     if not lots:
-        return await message.answer("🛍️ <b>Магазин партнера пока пуст.</b>\nЖдем новых лотов!")
-    
-    await message.answer("🛍️ <b>Доступные лоты в магазине:</b>")
+        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_main")]])
+        return await callback.message.edit_text("🛍️ <b>Магазин партнера пока пуст.</b>\nЖдем новых лотов!", reply_markup=kb)
+        
+    buttons = []
     for lot in lots:
-        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=f"Купить за {lot.price} 🪙", callback_data=f"buy_lot_{lot.id}")]])
-        await message.answer(f"📦 <b>{lot.title}</b>\n\n{lot.description}\n\nЦена: <b>{lot.price} 🪙</b>", reply_markup=kb)
+        buttons.append([InlineKeyboardButton(text=f"📦 {lot.title} ({lot.price} 🪙)", callback_data=f"shop_view_{lot.id}")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_main")])
+    
+    await callback.message.edit_text(
+        "🛍️ <b>Лоты партнера:</b>\n<i>Выбери лот, чтобы узнать подробности и купить.</i>",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+    )
+    await callback.answer()
+
+@router.callback_query(F.data == "shop_my_lots")
+async def shop_my_lots(callback: CallbackQuery):
+    async with async_session() as session:
+        result = await session.execute(select(Lot).where(Lot.owner_id == callback.from_user.id))
+        lots = result.scalars().all()
+        
+    if not lots:
+        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_main")]])
+        return await callback.message.edit_text("📦 <b>У тебя пока нет созданных лотов.</b>", reply_markup=kb)
+        
+    buttons = []
+    for lot in lots:
+        status = "✅" if lot.is_active else "❌ (продан)"
+        buttons.append([InlineKeyboardButton(text=f"{status} {lot.title}", callback_data=f"shop_view_my_{lot.id}")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_main")])
+    
+    await callback.message.edit_text(
+        "📦 <b>Твои лоты:</b>\n<i>Нажми на лот для просмотра.</i>",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+    )
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("shop_view_"))
+async def shop_view_lot(callback: CallbackQuery):
+    is_mine = callback.data.startswith("shop_view_my_")
+    lot_id = int(callback.data.replace("shop_view_my_", "").replace("shop_view_", ""))
+    
+    async with async_session() as session:
+        lot = await session.get(Lot, lot_id)
+        
+    if not lot:
+        return await callback.answer("Лот не найден!", show_alert=True)
+        
+    text = f"📦 <b>{lot.title}</b>\n\n{lot.description}\n\nЦена: <b>{lot.price} 🪙</b>\n"
+    text += f"Статус: {'✅ Активен' if lot.is_active else '❌ Продан'}"
+    
+    buttons = []
+    if is_mine:
+        buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_my_lots")])
+    else:
+        if lot.is_active:
+            buttons.append([InlineKeyboardButton(text=f"💳 Купить за {lot.price} 🪙", callback_data=f"buy_lot_{lot.id}")])
+        buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_partner_lots")])
+        
+    await callback.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    await callback.answer()
 
 @router.callback_query(F.data.startswith("buy_lot_"))
 async def buy_lot_callback(callback: CallbackQuery, bot: Bot):
@@ -98,10 +185,11 @@ async def buy_lot_callback(callback: CallbackQuery, bot: Bot):
     async with async_session() as session:
         lot = await session.get(Lot, lot_id)
         if not lot or not lot.is_active:
-            return await callback.answer("Лот недоступен.", show_alert=True)
+            return await callback.answer("Лот недоступен или уже продан.", show_alert=True)
         buyer = await get_or_create_user(session, buyer_id)
         if buyer.balance < lot.price:
-            return await callback.answer("Недостаточно ЛапКоинов!", show_alert=True)
+            return await callback.answer("Недостаточно ЛапКоинов для покупки!", show_alert=True)
+        
         buyer.balance -= lot.price
         seller_income = lot.price // 2
         seller = await get_or_create_user(session, lot.owner_id)
@@ -109,16 +197,21 @@ async def buy_lot_callback(callback: CallbackQuery, bot: Bot):
         lot.is_active = False
         await session.commit()
     
-    await callback.message.edit_text(f"✅ Лот «{lot.title}» успешно куплен!")
+    # Update current message
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Назад к лотам", callback_data="shop_partner_lots")]])
+    await callback.message.edit_text(f"✅ <b>Лот «{lot.title}» успешно куплен!</b>\n\nЯ отправил содержимое лота отдельным сообщением.", reply_markup=kb)
+    
     if lot.media_type == "text":
-        await bot.send_message(buyer_id, f"Содержимое лота «{lot.title}»:\n{lot.media_file_id}")
+        await bot.send_message(buyer_id, f"📦 <b>Содержимое лота «{lot.title}»:</b>\n\n{lot.media_file_id}")
     elif lot.media_type == "photo":
-        await bot.send_photo(buyer_id, lot.media_file_id, caption=f"Лот «{lot.title}»")
+        await bot.send_photo(buyer_id, lot.media_file_id, caption=f"📦 Лот «{lot.title}»")
     elif lot.media_type == "video":
-        await bot.send_video(buyer_id, lot.media_file_id, caption=f"Лот «{lot.title}»")
+        await bot.send_video(buyer_id, lot.media_file_id, caption=f"📦 Лот «{lot.title}»")
     elif lot.media_type == "voice":
-        await bot.send_voice(buyer_id, lot.media_file_id, caption=f"Лот «{lot.title}»")
+        await bot.send_voice(buyer_id, lot.media_file_id, caption=f"📦 Лот «{lot.title}»")
     elif lot.media_type == "video_note":
         await bot.send_video_note(buyer_id, lot.media_file_id)
-    await bot.send_message(lot.owner_id, f"Твой лот «{lot.title}» выкуплен за {lot.price} коинов! Получено {seller_income} 🪙.")
-    await callback.answer()
+        await bot.send_message(buyer_id, f"📦 Лот «{lot.title}»")
+        
+    await bot.send_message(lot.owner_id, f"🎉 <b>Твой лот «{lot.title}» выкуплен!</b>\nПолучено {seller_income} 🪙 (комиссия 50%).")
+    await callback.answer("Лот куплен!", show_alert=False)
