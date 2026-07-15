@@ -27,7 +27,7 @@
     },
     {
       "path": "/api/cron/weather_check",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 12 * * *"
     }
   ]
 }
