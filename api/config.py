@@ -16,6 +16,12 @@ class Config:
     WEATHER_API_KEY: str = os.getenv("WEATHER_API_KEY", "")
     
     # DB Configuration
-    DB_URL: str = os.getenv("DB_URL", "sqlite+aiosqlite:///:memory:")
+    _raw_db_url = os.getenv("DB_URL", "sqlite+aiosqlite:///:memory:")
+    if _raw_db_url.startswith("postgres://"):
+        DB_URL = _raw_db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif _raw_db_url.startswith("postgresql://"):
+        DB_URL = _raw_db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    else:
+        DB_URL = _raw_db_url
 
 config = Config()
