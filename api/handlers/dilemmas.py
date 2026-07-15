@@ -13,7 +13,7 @@ from api.database.db_queries import get_game_state
 router = Router()
 
 @router.message(Command("dilemma"))
-@router.message(F.text == "Сыграть в дилеммы")
+@router.message(F.text == "🎭 Сыграть в дилеммы")
 async def start_dilemma(message: Message, bot: Bot):
     async with async_session() as session:
         state = await get_game_state(session, "dilemma")

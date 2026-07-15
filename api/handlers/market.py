@@ -19,9 +19,9 @@ class CreateLotState(StatesGroup):
     waiting_for_price = State()
 
 @router.message(Command("create_lot"))
-@router.message(F.text == "Создать лот")
+@router.message(F.text == "🎁 Создать лот")
 async def create_lot_start(message: Message, state: FSMContext):
-    await message.answer("Отправь мне медиафайл (фото, видео, ГС, кружок) или текст для лота:")
+    await message.answer("🎁 <b>Создание нового лота</b>\n\nОтправь мне медиафайл (фото, видео, ГС, кружок) или текст, который будет содержимым лота:")
     await state.set_state(CreateLotState.waiting_for_media)
 
 @router.message(CreateLotState.waiting_for_media)
@@ -77,17 +77,19 @@ async def process_price(message: Message, state: FSMContext):
     await state.clear()
 
 @router.message(Command("shop"))
-@router.message(F.text == "Магазин")
+@router.message(F.text == "🛍️ Магазин чудес")
 async def shop_handler(message: Message):
     partner_id = config.POLINA_ID if message.from_user.id == config.DANILA_ID else config.DANILA_ID
     async with async_session() as session:
         result = await session.execute(select(Lot).where(Lot.owner_id == partner_id, Lot.is_active == True))
         lots = result.scalars().all()
     if not lots:
-        return await message.answer("Магазин партнера пока пуст.")
+        return await message.answer("🛍️ <b>Магазин партнера пока пуст.</b>\nЖдем новых лотов!")
+    
+    await message.answer("🛍️ <b>Доступные лоты в магазине:</b>")
     for lot in lots:
         kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=f"Купить за {lot.price} 🪙", callback_data=f"buy_lot_{lot.id}")]])
-        await message.answer(f"📦 <b>{lot.title}</b>\n\n{lot.description}\n\nЦена: {lot.price} 🪙", reply_markup=kb)
+        await message.answer(f"📦 <b>{lot.title}</b>\n\n{lot.description}\n\nЦена: <b>{lot.price} 🪙</b>", reply_markup=kb)
 
 @router.callback_query(F.data.startswith("buy_lot_"))
 async def buy_lot_callback(callback: CallbackQuery, bot: Bot):
