@@ -8,6 +8,7 @@ def get_main_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Ежедневный бонус"), KeyboardButton(text="Баланс")],
+            [KeyboardButton(text="Магазин"), KeyboardButton(text="Создать лот")],
             [KeyboardButton(text="Сыграть в дилеммы")],
             [KeyboardButton(text="Записать сон"), KeyboardButton(text="Наши сны")],
             [KeyboardButton(text="Заботливый пинг")],

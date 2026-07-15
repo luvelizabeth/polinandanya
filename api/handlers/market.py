@@ -19,6 +19,7 @@ class CreateLotState(StatesGroup):
     waiting_for_price = State()
 
 @router.message(Command("create_lot"))
+@router.message(F.text == "Создать лот")
 async def create_lot_start(message: Message, state: FSMContext):
     await message.answer("Отправь мне медиафайл (фото, видео, ГС, кружок) или текст для лота:")
     await state.set_state(CreateLotState.waiting_for_media)
@@ -76,6 +77,7 @@ async def process_price(message: Message, state: FSMContext):
     await state.clear()
 
 @router.message(Command("shop"))
+@router.message(F.text == "Магазин")
 async def shop_handler(message: Message):
     partner_id = config.POLINA_ID if message.from_user.id == config.DANILA_ID else config.DANILA_ID
     async with async_session() as session:
