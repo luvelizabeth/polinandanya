@@ -155,4 +155,4 @@ async def back_to_quotes_menu(callback: CallbackQuery):
         "✨ <i>Выбери действие ниже:</i>",
         reply_markup=get_quotes_keyboard_nav()
     )
-    await callback.answer()"}]}
+    await callback.answer()
