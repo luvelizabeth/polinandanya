@@ -129,9 +129,15 @@ async def shop_partner_lots_text(message: Message):
     buttons = []
     type_icons = {"photo": "🖼️", "video": "🎬", "voice": "🎙️", "video_note": "⭕", "text": "📝"}
     
+    current_row = []
     for lot in lots:
         icon = type_icons.get(lot.media_type, "🍭")
-        buttons.append([InlineKeyboardButton(text=f"{icon} {lot.title} — {lot.price} 🐾", callback_data=f"shop_view_{lot.id}")])
+        current_row.append(InlineKeyboardButton(text=f"[{icon}] {lot.title}", callback_data=f"shop_view_{lot.id}"))
+        if len(current_row) == 2:
+            buttons.append(current_row)
+            current_row = []
+    if current_row:
+        buttons.append(current_row)
     
     await message.answer(
         "🍭 <b>ЛОТЫ ПАРТНЕРА</b>\n"
@@ -159,10 +165,10 @@ async def shop_my_lots_text(message: Message):
     
     current_row = []
     for lot in lots:
-        status = "🍭" if lot.is_active else "❌"
+        status = "✅" if lot.is_active else "❌"
         icon = type_icons.get(lot.media_type, "🎀")
-        current_row.append(InlineKeyboardButton(text=f"{status} [{icon}]", callback_data=f"shop_view_my_{lot.id}"))
-        if len(current_row) == 3:
+        current_row.append(InlineKeyboardButton(text=f"[{icon}] {lot.title}", callback_data=f"shop_view_my_{lot.id}"))
+        if len(current_row) == 2:
             buttons.append(current_row)
             current_row = []
     if current_row:
