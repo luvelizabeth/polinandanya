@@ -111,7 +111,7 @@ async def shop_main_menu(message: Message):
         reply_markup=get_shop_keyboard()
     )
 
-@router.message(F.text == "🎁 Посмотреть лоты партнера")
+@router.message(F.text == "🍭 Посмотреть лоты партнера")
 async def shop_partner_lots_text(message: Message):
     partner_id = config.POLINA_ID if message.from_user.id == config.DANILA_ID else config.DANILA_ID
     async with async_session() as session:
