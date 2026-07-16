@@ -24,14 +24,15 @@ def make_key(key: StorageKey) -> str:
 class SupabaseStorage(BaseStorage):
     async def set_state(self, key: StorageKey, state: str = None) -> None:
         k = make_key(key)
+        state_str = state.state if hasattr(state, 'state') else state
         async with async_session() as session:
             res = await session.execute(select(FSMData).where(FSMData.key == k))
             obj = res.scalar_one_or_none()
             if not obj:
-                obj = FSMData(key=k, state=state.state if state else None)
+                obj = FSMData(key=k, state=state_str)
                 session.add(obj)
             else:
-                obj.state = state.state if state else None
+                obj.state = state_str
             await session.commit()
 
     async def get_state(self, key: StorageKey) -> str | None:
@@ -50,7 +51,13 @@ class SupabaseStorage(BaseStorage):
                 obj = FSMData(key=k, data=json.dumps(data))
                 session.add(obj)
             else:
-                obj.data = json.dumps(data)
+                if not data: # Handle state.clear()
+                    obj.data = "{}"
+                else:
+                    # Merge data to prevent loss in concurrent serverless environment
+                    current_data = json.loads(obj.data) if obj.data else {}
+                    current_data.update(data)
+                    obj.data = json.dumps(current_data)
             await session.commit()
 
     async def get_data(self, key: StorageKey) -> dict:

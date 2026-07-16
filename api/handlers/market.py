@@ -71,7 +71,9 @@ async def process_media(message: Message, state: FSMContext):
     media_list.append(new_file_id)
     await state.update_data(media_list=media_list, media_type=new_type)
     
-    await message.answer(f"✅ {new_type.capitalize()} №{len(media_list)} добавлено! Можешь отправить еще или нажать кнопку выше.")
+    if not message.media_group_id:
+        await message.answer(f"✅ {new_type.capitalize()} №{len(media_list)} добавлено! Можешь отправить еще или нажать кнопку выше.")
+    # For media groups, we don't spam messages to avoid rate limits and mess
 
 @router.callback_query(F.data == "finish_media", CreateLotState.waiting_for_media)
 async def finish_media(callback: CallbackQuery, state: FSMContext):
@@ -89,6 +91,9 @@ async def finish_media(callback: CallbackQuery, state: FSMContext):
 
 @router.message(CreateLotState.waiting_for_title)
 async def process_title(message: Message, state: FSMContext):
+    if not message.text:
+        return await message.answer("🍰 <i>Котик, пожалуйста, введи текстовое название для лота!</i>")
+    
     await state.update_data(title=message.text)
     await message.answer(
         "🍰 <b>ОПИСАНИЕ</b>\n"
@@ -99,6 +104,10 @@ async def process_title(message: Message, state: FSMContext):
 
 @router.message(CreateLotState.waiting_for_description)
 async def process_description(message: Message, state: FSMContext):
+    if not message.text:
+        # If it's not text (e.g. another photo), just remind the user
+        return await message.answer("🍰 <i>Напиши описание текстом, пожалуйста!</i>")
+
     await state.update_data(description=message.text)
     await message.answer(
         "🍰 <b>СТОИМОСТЬ</b>\n"
@@ -110,11 +119,18 @@ async def process_description(message: Message, state: FSMContext):
 
 @router.message(CreateLotState.waiting_for_price)
 async def process_price(message: Message, state: FSMContext):
-    if not message.text.isdigit():
+    if not message.text or not message.text.isdigit():
         return await message.answer("🐾 <i>Котик, введи, пожалуйста, только число!</i>")
+    
     price = int(message.text)
     data = await state.get_data()
     
+    # Debug logging for Vercel
+    print(f"Creating lot: data={data}")
+    
+    if not data.get("title") or not data.get("media_list"):
+        return await message.answer("⚠️ <b>Ошибка данных!</b>\nПохоже, произошел сбой при сохранении. Попробуй создать лот заново через /create_lot")
+
     async with async_session() as session:
         lot = Lot(
             owner_id=message.from_user.id, 
@@ -294,7 +310,14 @@ async def buy_lot(callback: CallbackQuery, bot: Bot):
     await callback.answer("🎉 Поздравляю с покупкой! Сейчас пришлю содержимое.", show_alert=True)
     
     # Send content
-    media_ids = json.loads(lot.media_file_id)
+    try:
+        media_ids = json.loads(lot.media_file_id)
+        if not isinstance(media_ids, list):
+            media_ids = [media_ids]
+    except:
+        # Fallback for old lots that stored a single string
+        media_ids = [lot.media_file_id]
+
     if lot.media_type == "text":
         for t in media_ids:
             await callback.message.answer(t)
