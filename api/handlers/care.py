@@ -15,7 +15,7 @@ class ReminderState(StatesGroup):
     waiting_for_time = State()
 
 @router.message(Command("ping"))
-@router.message(F.text == "🧸 Заботливый пинг")
+@router.message(F.text == "🍪 Заботливый пинг")
 async def send_ping(message: Message, bot: Bot):
     partner_id = config.POLINA_ID if message.from_user.id == config.DANILA_ID else config.DANILA_ID
     sender_name = "Даня" if message.from_user.id == config.DANILA_ID else "Полина"

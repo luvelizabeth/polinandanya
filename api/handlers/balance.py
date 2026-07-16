@@ -9,7 +9,7 @@ from api.database.db_queries import get_or_create_user
 router = Router()
 
 @router.message(Command("balance"))
-@router.message(F.text == "🐾 Мой баланс")
+@router.message(F.text == "🍬 Мой баланс")
 async def balance_handler(message: Message):
     async with async_session() as session:
         user = await get_or_create_user(session, message.from_user.id)
