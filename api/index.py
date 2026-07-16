@@ -53,6 +53,12 @@ async def lifespan(app: FastAPI):
     # Initialize DB schema
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Force add media_count if not exists (for Supabase/PostgreSQL)
+        try:
+            from sqlalchemy import text
+            await conn.execute(text("ALTER TABLE lots ADD COLUMN IF NOT EXISTS media_count INTEGER DEFAULT 1"))
+        except:
+            pass
     yield
     await engine.dispose()
 
