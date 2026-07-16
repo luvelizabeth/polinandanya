@@ -24,10 +24,10 @@ class CreateLotState(StatesGroup):
 @router.message(F.text == "🎀 Создать лот")
 async def create_lot_start(message: Message, state: FSMContext):
     await message.answer(
-        "✨ <b>НОВЫЙ ЛОТ</b>\n"
+        "🎀 <b>НОВЫЙ ЛОТ</b>\n"
         "─── ʚ 🎀 ɞ ───\n\n"
         "Давай создадим что-то особенное! Пришли мне медиафайл (фото, видео, ГС, кружок) или текст, который станет содержимым твоего лота.\n\n"
-        "🍭 <i>Твой партнер будет в восторге!</i>"
+        "🎀 Твой партнер будет в восторге!"
     )
     await state.set_state(CreateLotState.waiting_for_media)
 
@@ -55,9 +55,9 @@ async def process_media(message: Message, state: FSMContext):
         return
     await state.update_data(media_file_id=media_file_id, media_type=media_type)
     await message.answer(
-        "📝 <b>ЗАГОЛОВОК</b>\n"
-        "─── ʚ 📝 ɞ ───\n\n"
-        "Придумай милое название для своего лота. Оно будет отображаться на витрине! 👇"
+        "🍰 <b>ЗАГОЛОВОК</b>\n"
+        "─── ʚ 🍰 ɞ ───\n\n"
+        "Придумай милое название для своего лота. Оно будет отображаться в вашем магазине чудес!"
     )
     await state.set_state(CreateLotState.waiting_for_title)
 
@@ -65,9 +65,9 @@ async def process_media(message: Message, state: FSMContext):
 async def process_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await message.answer(
-        "🗒 <b>ОПИСАНИЕ</b>\n"
-        "─── ʚ 🗒 ɞ ───\n\n"
-        "Расскажи немного подробнее, что это за чудо? Твое описание поможет партнеру сделать выбор! ✨"
+        "🐝 <b>ОПИСАНИЕ</b>\n"
+        "─── ʚ 🐝 ɞ ───\n\n"
+        "Расскажи немного подробнее, что это за чудо? Твое описание поможет партнеру сделать выбор!"
     )
     await state.set_state(CreateLotState.waiting_for_description)
 
@@ -75,9 +75,10 @@ async def process_title(message: Message, state: FSMContext):
 async def process_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await message.answer(
-        "🐾 <b>СТОИМОСТЬ</b>\n"
-        "─── ʚ 🐾 ɞ ───\n\n"
-        "Сколько Лапкоинов должен стоить этот лот? Введи только число. 👇"
+        "🍮 <b>СТОИМОСТЬ</b>\n"
+        "─── ʚ 🍮 ɞ ───\n\n"
+        "Сколько Лапкоинов должен стоить этот лот?\n"
+        "Введи только число, Лапа!"
     )
     await state.set_state(CreateLotState.waiting_for_price)
 
@@ -93,7 +94,7 @@ async def process_price(message: Message, state: FSMContext):
         session.add(lot)
         await session.commit()
     await message.answer(
-        "🎉 <b>УСПЕХ!</b>\n"
+        "🎀 <b>УСПЕХ!</b>\n"
         "─── ʚ 🎀 ɞ ───\n\n"
         "Твой лот успешно создан и уже красуется на витрине! Теперь партнер может его выкупить. 🎀"
     )
@@ -148,7 +149,8 @@ async def shop_my_lots_text(message: Message):
         return await message.answer(
             "💖 <b>ТВОИ ЛОТЫ</b>\n"
             "─── ʚ 💖 ɞ ───\n\n"
-            "У тебя пока нет созданных лотов. Время что-нибудь придумать! ✨"
+            "У тебя пока нет созданных лотов.\n"
+            "Время что-нибудь придумать! 💖"
         )
         
     buttons = []
