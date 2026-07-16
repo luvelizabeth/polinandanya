@@ -26,8 +26,8 @@ def get_quotes_keyboard():
 @router.message(F.text == "🍯 Копилка цитат")
 async def quotes_menu(message: Message):
     await message.answer(
-        "🍯 <b>КОПИЛКА ЦИТАТ</b> 🍯\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "🍯 <b>КОПИЛКА ЦИТАТ</b>\n"
+        "─── ʚ 🍯 ɞ ───\n\n"
         "Сборник наших локальных мемов, смешных фраз и важных слов. Что будем делать?\n\n"
         "✨ <i>Выбери действие ниже:</i>",
         reply_markup=get_quotes_keyboard_nav()
@@ -97,7 +97,7 @@ async def view_quotes(message_or_cb):
         if isinstance(message_or_cb, CallbackQuery):
             return await message_or_cb.message.edit_text(
                 "🍯 <b>ЦИТАТНИК</b>\n"
-                "━━━━━━━━━━━━━━━━━━\n"
+                "─── ʚ 🍯 ɞ ───\n\n"
                 "Цитатник пока пуст. Пора добавить что-нибудь легендарное! 🍯", 
                 reply_markup=kb_back
             )
@@ -115,7 +115,7 @@ async def view_quotes(message_or_cb):
     
     response = (
         f"📖 <b>АРХИВ ЦИТАТ</b>\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
+        f"─── ʚ 🍯 ɞ ───\n\n"
         f"Страница {page+1} из {total_pages}\n\n"
     )
     for q in page_quotes:
@@ -124,12 +124,12 @@ async def view_quotes(message_or_cb):
             f"🍯 <i>«{q.text}»</i>\n"
             f"👤 <b>{q.author_name}</b>\n"
             f"🗓 {q.date.strftime('%d.%m.%Y')} (добавил {adder})\n"
-            f"━━━━━━━━━━━━━━━━━━\n\n"
+            f"─── ʚ ✨ ɞ ───\n\n"
         )
     
     nav_buttons = []
     if page > 0:
-        nav_buttons.append(InlineKeyboardButton(text="⬅️ Пред.", callback_data=f"show_quotes_page_{page-1}"))
+        nav_buttons.append(InlineKeyboardButton(text="⬅️ Пред.", callback_data=f"show_quotes_page_{page-1} "))
     if page < total_pages - 1:
         nav_buttons.append(InlineKeyboardButton(text="След. ➡️", callback_data=f"show_quotes_page_{page+1}"))
         
@@ -149,8 +149,8 @@ async def view_quotes(message_or_cb):
 @router.callback_query(F.data == "quotes_menu")
 async def back_to_quotes_menu(callback: CallbackQuery):
     await callback.message.edit_text(
-        "🍯 <b>КОПИЛКА ЦИТАТ</b> 🍯\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "🍯 <b>КОПИЛКА ЦИТАТ</b>\n"
+        "─── ʚ 🍯 ɞ ───\n\n"
         "Сборник наших локальных мемов, смешных фраз и важных слов. Что будем делать?\n\n"
         "✨ <i>Выбери действие ниже:</i>",
         reply_markup=get_quotes_keyboard_nav()

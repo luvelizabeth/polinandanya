@@ -28,8 +28,8 @@ def get_dreams_keyboard():
 @router.message(F.text == "☁️ Наши сновидения")
 async def dreams_menu(message: Message):
     await message.answer(
-        "☁️ <b>ДНЕВНИК СНОВИДЕНИЙ</b> ☁️\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "☁️ <b>ДНЕВНИК СНОВИДЕНИЙ</b>\n"
+        "─── ʚ ☁️ ɞ ───\n\n"
         "Здесь хранятся наши самые странные, страшные и милые сны. Хочешь вспомнить прошлое или записать свежий сон?\n\n"
         "✨ <i>Выбери действие ниже:</i>",
         reply_markup=get_dreams_keyboard_nav()
@@ -116,10 +116,10 @@ async def show_dreams(message_or_cb):
         dreams = res.scalars().all()
     if not dreams:
         if isinstance(message_or_cb, CallbackQuery):
-            kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Назад", callback_data="dreams_menu")]])
+            kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🌸 Назад", callback_data="dreams_menu")]])
             return await message_or_cb.message.edit_text(
                 "☁️ <b>ДНЕВНИК СНОВ</b>\n"
-                "━━━━━━━━━━━━━━━━━━\n"
+                "─── ʚ ☁️ ɞ ───\n\n"
                 "Дневник пока пуст... Самое время увидеть что-нибудь интересное! ✨", 
                 reply_markup=kb
             )
@@ -141,11 +141,11 @@ async def show_dreams(message_or_cb):
         counts = f"({t_count}{' ' if t_count and v_count else ''}{v_count})"
         btn_text = f"📅 {d_date.strftime('%d.%m.%y')} — {name} {counts}"
         buttons.append([InlineKeyboardButton(text=btn_text, callback_data=f"read_dream_{d_date.isoformat()}_{u_id}")])
-    buttons.append([InlineKeyboardButton(text="⬅️ В меню сновидений", callback_data="dreams_menu")])
+    buttons.append([InlineKeyboardButton(text="🌸 В меню сновидений", callback_data="dreams_menu")])
     
     text = (
         "📖 <b>АРХИВ СНОВИДЕНИЙ</b>\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "─── ʚ 📖 ɞ ───\n\n"
         "Выбери запись, чтобы прочитать или прослушать её детали. 👇"
     )
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -179,7 +179,7 @@ async def read_dream_cb(callback: CallbackQuery, bot: Bot):
     text = (
         f"💤 <b>СОН: {name}</b>\n"
         f"📅 <b>Дата:</b> {d_date.strftime('%d.%m.%Y')}\n"
-        f"━━━━━━━━━━━━━━━━━━\n\n"
+        f"─── ʚ 💤 ɞ ───\n\n"
     )
     voices = []
     for d in dreams:
@@ -191,7 +191,7 @@ async def read_dream_cb(callback: CallbackQuery, bot: Bot):
     if voices:
         text += f"🎙 <b>Голосовые фрагменты:</b> {len(voices)} шт.\n<i>(Будут отправлены ниже)</i>"
             
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ К списку снов", callback_data="show_dreams")]])
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🌸 К списку снов", callback_data="show_dreams")]])
     await callback.message.edit_text(text, reply_markup=kb)
     
     for v in voices:

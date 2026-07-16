@@ -24,8 +24,8 @@ class CreateLotState(StatesGroup):
 @router.message(F.text == "🎀 Создать лот")
 async def create_lot_start(message: Message, state: FSMContext):
     await message.answer(
-        "✨ <b>НОВЫЙ ЛОТ</b> ✨\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "✨ <b>НОВЫЙ ЛОТ</b>\n"
+        "─── ʚ 🎀 ɞ ───\n\n"
         "Давай создадим что-то особенное! Пришли мне медиафайл (фото, видео, ГС, кружок) или текст, который станет содержимым твоего лота.\n\n"
         "🍭 <i>Твой партнер будет в восторге!</i>"
     )
@@ -56,7 +56,7 @@ async def process_media(message: Message, state: FSMContext):
     await state.update_data(media_file_id=media_file_id, media_type=media_type)
     await message.answer(
         "📝 <b>ЗАГОЛОВОК</b>\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "─── ʚ 📝 ɞ ───\n\n"
         "Придумай милое название для своего лота. Оно будет отображаться на витрине! 👇"
     )
     await state.set_state(CreateLotState.waiting_for_title)
@@ -66,7 +66,7 @@ async def process_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await message.answer(
         "🗒 <b>ОПИСАНИЕ</b>\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "─── ʚ 🗒 ɞ ───\n\n"
         "Расскажи немного подробнее, что это за чудо? Твое описание поможет партнеру сделать выбор! ✨"
     )
     await state.set_state(CreateLotState.waiting_for_description)
@@ -76,7 +76,7 @@ async def process_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await message.answer(
         "🐾 <b>СТОИМОСТЬ</b>\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "─── ʚ 🐾 ɞ ───\n\n"
         "Сколько Лапкоинов должен стоить этот лот? Введи только число. 👇"
     )
     await state.set_state(CreateLotState.waiting_for_price)
@@ -94,7 +94,7 @@ async def process_price(message: Message, state: FSMContext):
         await session.commit()
     await message.answer(
         "🎉 <b>УСПЕХ!</b>\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "─── ʚ 🎀 ɞ ───\n\n"
         "Твой лот успешно создан и уже красуется на витрине! Теперь партнер может его выкупить. 🎀"
     )
     await state.clear()
@@ -103,8 +103,8 @@ async def process_price(message: Message, state: FSMContext):
 @router.message(F.text == "🍭 Магазин чудес")
 async def shop_main_menu(message: Message):
     await message.answer(
-        "✨ <b>МАГАЗИН ЧУДЕС</b> ✨\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "✨ <b>МАГАЗИН ЧУДЕС</b>\n"
+        "─── ʚ 🍭 ɞ ───\n\n"
         "Здесь ты можешь обменять накопленные Лапкоины на уникальные лоты от своего партнера.\n\n"
         "💠 <i>Выбери действие:</i>",
         reply_markup=get_shop_keyboard()
@@ -120,7 +120,7 @@ async def shop_partner_lots_text(message: Message):
     if not lots:
         return await message.answer(
             "🍭 <b>МАГАЗИН ПАРТНЕРА</b>\n"
-            "━━━━━━━━━━━━━━━━━━\n"
+            "─── ʚ 🍭 ɞ ───\n\n"
             "Пока что здесь пусто... Ждем новых поступлений! 🎀"
         )
         
@@ -133,7 +133,7 @@ async def shop_partner_lots_text(message: Message):
     
     await message.answer(
         "🍭 <b>ЛОТЫ ПАРТНЕРА</b>\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "─── ʚ 🛍️ ɞ ───\n\n"
         "Нажми на интересующий лот, чтобы узнать подробности и совершить покупку. 👇",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
@@ -147,7 +147,7 @@ async def shop_my_lots_text(message: Message):
     if not lots:
         return await message.answer(
             "💖 <b>ТВОИ ЛОТЫ</b>\n"
-            "━━━━━━━━━━━━━━━━━━\n"
+            "─── ʚ 💖 ɞ ───\n\n"
             "У тебя пока нет созданных лотов. Время что-нибудь придумать! ✨"
         )
         
@@ -161,7 +161,7 @@ async def shop_my_lots_text(message: Message):
     
     await message.answer(
         "💖 <b>ТВОИ ЛОТЫ</b>\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "─── ʚ 💖 ɞ ───\n\n"
         "Твои активные и проданные предложения. Нажми для управления. 👇",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
@@ -201,14 +201,13 @@ async def shop_view_lot(callback: CallbackQuery):
     m_type = type_names.get(lot.media_type, "Контент 🍭")
     
     text = (
-        f"✨ <b>ИНФОРМАЦИЯ О ЛОТЕ</b> ✨\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
+        f"✨ <b>ИНФОРМАЦИЯ О ЛОТЕ</b>\n"
+        f"─── ʚ 🍭 ɞ ───\n\n"
         f"🏷 <b>Название:</b> {lot.title}\n"
         f"📝 <b>Описание:</b> {lot.description}\n"
         f"📂 <b>Тип контента:</b> {m_type}\n"
-        f"🐾 <b>Стоимость:</b> {lot.price} Лапкоинов\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
-        f"📊 <b>Статус:</b> {'🍭 Доступен для покупки' if lot.is_active else '❌ Продан'}"
+        f"🐾 <b>Стоимость:</b> {lot.price} Лапкоинов\n\n"
+        f"📊 <b>Статус:</b> {'🍭 Доступен' if lot.is_active else '❌ Продан'}"
     )
     
     buttons = []
@@ -233,7 +232,7 @@ async def confirm_delete_lot(callback: CallbackQuery):
     ])
     await callback.message.edit_text(
         "⚠️ <b>ПОДТВЕРЖДЕНИЕ</b>\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "─── ʚ 🗑 ɞ ───\n\n"
         "Ты действительно хочешь удалить этот лот? Это действие нельзя будет отменить.",
         reply_markup=kb
     )

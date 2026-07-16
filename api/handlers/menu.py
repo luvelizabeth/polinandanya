@@ -7,10 +7,10 @@ router = Router()
 def get_main_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🐾 Мой баланс")],
+            [KeyboardButton(text="🍬 Мой баланс")],
             [KeyboardButton(text="🍭 Магазин чудес"), KeyboardButton(text="🎀 Создать лот")],
             [KeyboardButton(text="🧸 Сыграть в дилеммы"), KeyboardButton(text="☁️ Наши сновидения")],
-            [KeyboardButton(text="🍯 Копилка цитат"), KeyboardButton(text="🧸 Заботливый пинг")]
+            [KeyboardButton(text="🍯 Копилка цитат"), KeyboardButton(text="🍪 Заботливый пинг")]
         ], resize_keyboard=True
     )
 
@@ -46,8 +46,8 @@ def get_quotes_keyboard_nav():
 @router.message(F.text == "🌸 Назад")
 async def show_menu(message: Message):
     await message.answer(
-        "✨ <b>ГЛАВНОЕ МЕНЮ</b> ✨\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "✨ <b>ГЛАВНОЕ МЕНЮ</b>\n"
+        "─── ʚ 🌸 ɞ ───\n\n"
         "Добро пожаловать, солнышко! Здесь собраны все функции для нашего общения. Выбирай раздел ниже:\n\n"
         "🌸 <i>Твой уютный помощник готов к работе!</i>",
         reply_markup=get_main_keyboard()

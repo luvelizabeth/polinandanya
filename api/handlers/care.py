@@ -28,7 +28,8 @@ async def send_ping(message: Message, bot: Bot):
     except TelegramBadRequest as e:
         logging.error(f"Failed to send ping to {partner_id}: {e}")
         await message.answer(
-            "🌸 <b>Ой, котик недоступен!</b>\n\n"
+            "🌸 <b>Ой, котик недоступен!</b>\n"
+            "─── ʚ 🍓 ɞ ───\n\n"
             "Кажется, партнер еще не запустил бота или заблокировал его. "
             "Попроси его написать /start боту! ✨"
         )

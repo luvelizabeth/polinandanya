@@ -15,7 +15,7 @@ async def balance_handler(message: Message):
         user = await get_or_create_user(session, message.from_user.id)
         await message.answer(
             f"🍓 <b>ТВОЙ КОШЕЛЕК</b>\n"
-            f"━━━━━━━━━━━━━━━━━━\n"
+            f"─── ʚ 🍓 ɞ ───\n\n"
             f"Внутри приятно звенят Лапкоины. Ты можешь потратить их в «Магазине чудес».\n\n"
             f"🍓 <b>ТЕКУЩИЙ БАЛАНС:</b>\n"
             f"➔ <code>{user.balance}</code> Лапкоинов"
