@@ -20,7 +20,7 @@ async def send_ping(message: Message, bot: Bot):
     partner_id = config.POLINA_ID if message.from_user.id == config.DANILA_ID else config.DANILA_ID
     sender_name = "Даня" if message.from_user.id == config.DANILA_ID else "Полина"
     
-    text = f"🧸 <b>Заботливый пинг от {sender_name}!</b>\n\nТебе напоминают, что нужно попить водички, размять спину и улыбнуться! ✨💖"
+    text = f"🍓 <b>Заботливый пинг от {sender_name}!</b>\n\nТебе напоминают, что нужно попить водички, размять спину и улыбнуться! ✨💖"
     
     try:
         await bot.send_message(partner_id, text)

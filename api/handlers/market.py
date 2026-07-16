@@ -168,16 +168,7 @@ async def shop_my_lots_text(message: Message):
 
 @router.callback_query(F.data == "shop_main")
 async def shop_main_callback(callback: CallbackQuery):
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎁 Посмотреть лоты партнера", callback_data="shop_partner_lots")],
-        [InlineKeyboardButton(text="📦 Мои лоты", callback_data="shop_my_lots")],
-        [InlineKeyboardButton(text="❌ Свернуть", callback_data="shop_close")]
-    ])
-    await callback.message.edit_text(
-        "🛍️ <b>Магазин чудес</b>\n\n"
-        "Здесь ты можешь потратить свои ЛапКоины на лоты партнера или управлять своими собственными лотами.",
-        reply_markup=kb
-    )
+    await shop_main_menu(callback.message)
     await callback.answer()
 
 @router.callback_query(F.data == "shop_close")
@@ -187,46 +178,12 @@ async def shop_close_callback(callback: CallbackQuery):
 
 @router.callback_query(F.data == "shop_partner_lots")
 async def shop_partner_lots(callback: CallbackQuery):
-    partner_id = config.POLINA_ID if callback.from_user.id == config.DANILA_ID else config.DANILA_ID
-    async with async_session() as session:
-        result = await session.execute(select(Lot).where(Lot.owner_id == partner_id, Lot.is_active == True))
-        lots = result.scalars().all()
-        
-    if not lots:
-        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_main")]])
-        return await callback.message.edit_text("🛍️ <b>Магазин партнера пока пуст.</b>\nЖдем новых лотов!", reply_markup=kb)
-        
-    buttons = []
-    for lot in lots:
-        buttons.append([InlineKeyboardButton(text=f"📦 {lot.title} ({lot.price} 🪙)", callback_data=f"shop_view_{lot.id}")])
-    buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_main")])
-    
-    await callback.message.edit_text(
-        "🛍️ <b>Лоты партнера:</b>\n<i>Выбери лот, чтобы узнать подробности и купить.</i>",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
-    )
+    await shop_partner_lots_text(callback.message)
     await callback.answer()
 
 @router.callback_query(F.data == "shop_my_lots")
 async def shop_my_lots(callback: CallbackQuery):
-    async with async_session() as session:
-        result = await session.execute(select(Lot).where(Lot.owner_id == callback.from_user.id))
-        lots = result.scalars().all()
-        
-    if not lots:
-        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_main")]])
-        return await callback.message.edit_text("📦 <b>У тебя пока нет созданных лотов.</b>", reply_markup=kb)
-        
-    buttons = []
-    for lot in lots:
-        status = "✅" if lot.is_active else "❌ (продан)"
-        buttons.append([InlineKeyboardButton(text=f"{status} {lot.title}", callback_data=f"shop_view_my_{lot.id}")])
-    buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_main")])
-    
-    await callback.message.edit_text(
-        "📦 <b>Твои лоты:</b>\n<i>Нажми на лот для просмотра.</i>",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
-    )
+    await shop_my_lots_text(callback.message)
     await callback.answer()
 
 @router.callback_query(F.data.startswith("shop_view_"))
