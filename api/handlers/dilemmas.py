@@ -16,17 +16,17 @@ import logging
 router = Router()
 
 @router.message(Command("dilemma"))
-@router.message(F.text == "🎭 Сыграть в дилеммы")
+@router.message(F.text == "🧸 Сыграть в дилеммы")
 async def start_dilemma(message: Message, bot: Bot):
     async with async_session() as session:
         state = await get_game_state(session, "dilemma")
         if state.is_active:
-            return await message.answer("Игра уже идет! Ждем ответа партнера.")
+            return await message.answer("🍭 <i>Игра уже идет! Ждем ответа партнера.</i>")
         
         result = await session.execute(select(Dilemma).where(Dilemma.is_used == False))
         dilemmas = result.scalars().all()
         if not dilemmas:
-            return await message.answer("Все дилеммы закончились! 😢")
+            return await message.answer("🍭 <i>Все дилеммы закончились! Пора придумать новые. ✨</i>")
             
         dilemma = random.choice(dilemmas)
         dilemma.is_used = True
@@ -43,7 +43,7 @@ async def start_dilemma(message: Message, bot: Bot):
         [InlineKeyboardButton(text=dilemma.option1, callback_data="dil_1")],
         [InlineKeyboardButton(text=dilemma.option2, callback_data="dil_2")]
     ])
-    msg_text = f"🤔 <b>Что бы ты выбрал?</b>\n\n{dilemma.question}"
+    msg_text = f"🧸 <b>ЧТО БЫ ТЫ ВЫБРАЛ?</b>\n━━━━━━━━━━━━━━━━━━\n\n{dilemma.question}"
     
     # Try sending to both users, handle if one hasn't started the bot
     for user_id in [config.DANILA_ID, config.POLINA_ID]:
@@ -51,7 +51,7 @@ async def start_dilemma(message: Message, bot: Bot):
             await bot.send_message(user_id, msg_text, reply_markup=kb)
         except TelegramBadRequest:
             logging.error(f"Could not send dilemma to {user_id} - chat not found")
-            await message.answer(f"⚠️ Не удалось отправить дилемму одному из партнеров (ID: {user_id}). Убедитесь, что оба запустили бота.")
+            await message.answer(f"🌸 <i>Ой, не удалось отправить дилемму партнеру. Убедитесь, что оба запустили бота!</i>")
 
 @router.callback_query(F.data.startswith("dil_"))
 async def handle_dilemma_answer(callback: CallbackQuery, bot: Bot):

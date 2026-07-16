@@ -15,12 +15,12 @@ class ReminderState(StatesGroup):
     waiting_for_time = State()
 
 @router.message(Command("ping"))
-@router.message(F.text == "🫂 Заботливый пинг")
+@router.message(F.text == "🧸 Заботливый пинг")
 async def send_ping(message: Message, bot: Bot):
     partner_id = config.POLINA_ID if message.from_user.id == config.DANILA_ID else config.DANILA_ID
     sender_name = "Даня" if message.from_user.id == config.DANILA_ID else "Полина"
     
-    text = f"🫂 <b>Заботливый пинг от {sender_name}!</b>\n\nТебе напоминают, что нужно попить водички, размять спину и улыбнуться! ❤️"
+    text = f"🧸 <b>Заботливый пинг от {sender_name}!</b>\n\nТебе напоминают, что нужно попить водички, размять спину и улыбнуться! ✨💖"
     
     try:
         await bot.send_message(partner_id, text)
@@ -28,13 +28,13 @@ async def send_ping(message: Message, bot: Bot):
     except TelegramBadRequest as e:
         logging.error(f"Failed to send ping to {partner_id}: {e}")
         await message.answer(
-            "❌ <b>Ошибка при отправке пинга.</b>\n\n"
-            "Скорее всего, партнер еще не запустил бота или заблокировал его. "
-            "Попроси партнера написать /start боту!"
+            "🌸 <b>Ой, котик недоступен!</b>\n\n"
+            "Кажется, партнер еще не запустил бота или заблокировал его. "
+            "Попроси его написать /start боту! ✨"
         )
     except Exception as e:
         logging.error(f"Unexpected error in send_ping: {e}")
-        await message.answer("⚠️ Произошла непредвиденная ошибка при отправке пинга.")
+        await message.answer("🍭 Произошла какая-то ошибка, попробуй еще раз позже!")
 
 @router.message(ReminderState.waiting_for_text)
 async def process_reminder_text(message: Message, state: FSMContext):

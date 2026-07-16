@@ -23,10 +23,10 @@ def get_quotes_keyboard():
         [InlineKeyboardButton(text="❌ Свернуть", callback_data="close_menu")]
     ])
 
-@router.message(F.text == "💬 Копилка цитат")
+@router.message(F.text == "🍯 Копилка цитат")
 async def quotes_menu(message: Message):
     await message.answer(
-        "📜 <b>КОПИЛКА ЦИТАТ</b> 📜\n"
+        "🍯 <b>КОПИЛКА ЦИТАТ</b> 🍯\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "Сборник наших локальных мемов, смешных фраз и важных слов. Что будем делать?\n\n"
         "✨ <i>Выбери действие ниже:</i>",
@@ -91,18 +91,18 @@ async def view_quotes(message_or_cb):
         res = await session.execute(select(Quote).order_by(Quote.date.desc()))
         quotes = res.scalars().all()
         
-    kb_back = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Назад", callback_data="quotes_menu")]])
+    kb_back = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🌸 Назад", callback_data="quotes_menu")]])
         
     if not quotes:
         if isinstance(message_or_cb, CallbackQuery):
             return await message_or_cb.message.edit_text(
-                "📜 <b>ЦИТАТНИК</b>\n"
+                "🍯 <b>ЦИТАТНИК</b>\n"
                 "━━━━━━━━━━━━━━━━━━\n"
-                "Цитатник пока пуст. Пора добавить что-нибудь легендарное! 💬", 
+                "Цитатник пока пуст. Пора добавить что-нибудь легендарное! 🍯", 
                 reply_markup=kb_back
             )
         else:
-            return await msg.answer("📜 <b>Цитатник пока пуст.</b>")
+            return await msg.answer("🍯 <i>Цитатник пока пуст.</i>")
             
     quotes_per_page = 5
     total_pages = (len(quotes) + quotes_per_page - 1) // quotes_per_page
@@ -121,7 +121,7 @@ async def view_quotes(message_or_cb):
     for q in page_quotes:
         adder = "Даня" if q.added_by_id == config.DANILA_ID else "Полина"
         response += (
-            f"💬 <i>«{q.text}»</i>\n"
+            f"🍯 <i>«{q.text}»</i>\n"
             f"👤 <b>{q.author_name}</b>\n"
             f"🗓 {q.date.strftime('%d.%m.%Y')} (добавил {adder})\n"
             f"━━━━━━━━━━━━━━━━━━\n\n"
@@ -136,7 +136,7 @@ async def view_quotes(message_or_cb):
     buttons = []
     if nav_buttons:
         buttons.append(nav_buttons)
-    buttons.append([InlineKeyboardButton(text="⬅️ В меню цитат", callback_data="quotes_menu")])
+    buttons.append([InlineKeyboardButton(text="🌸 В меню цитат", callback_data="quotes_menu")])
     
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
     
@@ -149,10 +149,10 @@ async def view_quotes(message_or_cb):
 @router.callback_query(F.data == "quotes_menu")
 async def back_to_quotes_menu(callback: CallbackQuery):
     await callback.message.edit_text(
-        "📜 <b>КОПИЛКА ЦИТАТ</b> 📜\n"
+        "🍯 <b>КОПИЛКА ЦИТАТ</b> 🍯\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "Сборник наших локальных мемов, смешных фраз и важных слов. Что будем делать?\n\n"
         "✨ <i>Выбери действие ниже:</i>",
         reply_markup=get_quotes_keyboard_nav()
     )
-    await callback.answer()
+    await callback.answer()"}]}

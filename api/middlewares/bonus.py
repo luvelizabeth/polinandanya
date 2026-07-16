@@ -28,9 +28,9 @@ class AutoBonusMiddleware(BaseMiddleware):
                             text=(
                                 f"☀️ <b>ЕЖЕДНЕВНЫЙ БОНУС</b>\n"
                                 f"━━━━━━━━━━━━━━━━━━\n"
-                                f"С возвращением! Ты зашел сюда впервые за сегодня, и я начислил тебе подарок.\n\n"
-                                f"🎁 <b>Начислено:</b> <code>{amount}</code> ЛапКоинов\n"
-                                f"💰 <b>Твой баланс:</b> <code>{db_user.balance}</code> 🪙"
+                                f"С возвращением, солнышко! Ты зашел сюда впервые за сегодня, и я начислил тебе подарок.\n\n"
+                                f"🎁 <b>Начислено:</b> <code>{amount}</code> Лапкоинов\n"
+                                f"🐾 <b>Твой баланс:</b> <code>{db_user.balance}</code> Лапкоинов"
                             )
                         )
         return await handler(event, data)

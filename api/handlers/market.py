@@ -21,9 +21,14 @@ class CreateLotState(StatesGroup):
     waiting_for_price = State()
 
 @router.message(Command("create_lot"))
-@router.message(F.text == "🎁 Создать лот")
+@router.message(F.text == "🎀 Создать лот")
 async def create_lot_start(message: Message, state: FSMContext):
-    await message.answer("🎁 <b>Создание нового лота</b>\n\nОтправь мне медиафайл (фото, видео, ГС, кружок) или текст, который будет содержимым лота:")
+    await message.answer(
+        "✨ <b>НОВЫЙ ЛОТ</b> ✨\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Давай создадим что-то особенное! Пришли мне медиафайл (фото, видео, ГС, кружок) или текст, который станет содержимым твоего лота.\n\n"
+        "🍭 <i>Твой партнер будет в восторге!</i>"
+    )
     await state.set_state(CreateLotState.waiting_for_media)
 
 @router.message(CreateLotState.waiting_for_media)
@@ -46,28 +51,40 @@ async def process_media(message: Message, state: FSMContext):
         media_file_id = message.text
         media_type = "text"
     else:
-        await message.answer("Неподдерживаемый тип сообщения.")
+        await message.answer("🍭 <i>Ой, такой формат я пока не понимаю. Попробуй отправить что-то другое!</i>")
         return
     await state.update_data(media_file_id=media_file_id, media_type=media_type)
-    await message.answer("Отлично! Теперь введи заголовок лота:")
+    await message.answer(
+        "📝 <b>ЗАГОЛОВОК</b>\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Придумай милое название для своего лота. Оно будет отображаться на витрине! 👇"
+    )
     await state.set_state(CreateLotState.waiting_for_title)
 
 @router.message(CreateLotState.waiting_for_title)
 async def process_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
-    await message.answer("Введи описание лота:")
+    await message.answer(
+        "🗒 <b>ОПИСАНИЕ</b>\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Расскажи немного подробнее, что это за чудо? Твое описание поможет партнеру сделать выбор! ✨"
+    )
     await state.set_state(CreateLotState.waiting_for_description)
 
 @router.message(CreateLotState.waiting_for_description)
 async def process_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
-    await message.answer("Введи цену лота (в ЛапКоинах, только число):")
+    await message.answer(
+        "🐾 <b>СТОИМОСТЬ</b>\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Сколько Лапкоинов должен стоить этот лот? Введи только число. 👇"
+    )
     await state.set_state(CreateLotState.waiting_for_price)
 
 @router.message(CreateLotState.waiting_for_price)
 async def process_price(message: Message, state: FSMContext):
     if not message.text.isdigit():
-        return await message.answer("Пожалуйста, введи только число.")
+        return await message.answer("🐾 <i>Котик, введи, пожалуйста, только число!</i>")
     price = int(message.text)
     data = await state.get_data()
     async with async_session() as session:
@@ -75,16 +92,20 @@ async def process_price(message: Message, state: FSMContext):
                   price=price, media_file_id=data['media_file_id'], media_type=data['media_type'])
         session.add(lot)
         await session.commit()
-    await message.answer("✅ Лот успешно создан и добавлен в магазин!")
+    await message.answer(
+        "🎉 <b>УСПЕХ!</b>\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Твой лот успешно создан и уже красуется на витрине! Теперь партнер может его выкупить. 🎀"
+    )
     await state.clear()
 
 @router.message(Command("shop"))
-@router.message(F.text == "🛍️ Магазин чудес")
+@router.message(F.text == "🍭 Магазин чудес")
 async def shop_main_menu(message: Message):
     await message.answer(
         "✨ <b>МАГАЗИН ЧУДЕС</b> ✨\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "Здесь ты можешь обменять накопленные ЛапКоины на уникальные лоты от своего партнера.\n\n"
+        "Здесь ты можешь обменять накопленные Лапкоины на уникальные лоты от своего партнера.\n\n"
         "💠 <i>Выбери действие:</i>",
         reply_markup=get_shop_keyboard()
     )
@@ -98,26 +119,26 @@ async def shop_partner_lots_text(message: Message):
         
     if not lots:
         return await message.answer(
-            "🛍️ <b>МАГАЗИН ПАРТНЕРА</b>\n"
+            "🍭 <b>МАГАЗИН ПАРТНЕРА</b>\n"
             "━━━━━━━━━━━━━━━━━━\n"
-            "Пока что здесь пусто... Ждем новых поступлений! 🎈"
+            "Пока что здесь пусто... Ждем новых поступлений! 🎀"
         )
         
     buttons = []
     type_icons = {"photo": "🖼️", "video": "🎬", "voice": "🎙️", "video_note": "⭕", "text": "📝"}
     
     for lot in lots:
-        icon = type_icons.get(lot.media_type, "📦")
-        buttons.append([InlineKeyboardButton(text=f"{icon} {lot.title} — {lot.price} 🪙", callback_data=f"shop_view_{lot.id}")])
+        icon = type_icons.get(lot.media_type, "🍭")
+        buttons.append([InlineKeyboardButton(text=f"{icon} {lot.title} — {lot.price} 🐾", callback_data=f"shop_view_{lot.id}")])
     
     await message.answer(
-        "🛍️ <b>ЛОТЫ ПАРТНЕРА</b>\n"
+        "🍭 <b>ЛОТЫ ПАРТНЕРА</b>\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "Нажми на интересующий лот, чтобы узнать подробности и совершить покупку. 👇",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
 
-@router.message(F.text == "📦 Мои лоты")
+@router.message(F.text == "💖 Мои лоты")
 async def shop_my_lots_text(message: Message):
     async with async_session() as session:
         result = await session.execute(select(Lot).where(Lot.owner_id == message.from_user.id))
@@ -125,7 +146,7 @@ async def shop_my_lots_text(message: Message):
         
     if not lots:
         return await message.answer(
-            "📦 <b>ТВОИ ЛОТЫ</b>\n"
+            "💖 <b>ТВОИ ЛОТЫ</b>\n"
             "━━━━━━━━━━━━━━━━━━\n"
             "У тебя пока нет созданных лотов. Время что-нибудь придумать! ✨"
         )
@@ -134,12 +155,12 @@ async def shop_my_lots_text(message: Message):
     type_icons = {"photo": "🖼️", "video": "🎬", "voice": "🎙️", "video_note": "⭕", "text": "📝"}
     
     for lot in lots:
-        status = "✅" if lot.is_active else "❌"
-        icon = type_icons.get(lot.media_type, "📦")
+        status = "🍭" if lot.is_active else "❌"
+        icon = type_icons.get(lot.media_type, "🎀")
         buttons.append([InlineKeyboardButton(text=f"{status} {icon} {lot.title}", callback_data=f"shop_view_my_{lot.id}")])
     
     await message.answer(
-        "📦 <b>ТВОИ ЛОТЫ</b>\n"
+        "💖 <b>ТВОИ ЛОТЫ</b>\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "Твои активные и проданные предложения. Нажми для управления. 👇",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -217,32 +238,67 @@ async def shop_view_lot(callback: CallbackQuery):
         lot = await session.get(Lot, lot_id)
         
     if not lot:
-        return await callback.answer("Лот не найден!", show_alert=True)
+        return await callback.answer("🍭 Лот не найден!", show_alert=True)
         
     type_names = {"photo": "Фотография 🖼️", "video": "Видео 🎬", "voice": "Голосовое сообщение 🎙️", "video_note": "Видеосообщение ⭕", "text": "Текст 📝"}
-    m_type = type_names.get(lot.media_type, "Контент 📦")
+    m_type = type_names.get(lot.media_type, "Контент 🍭")
     
     text = (
-        f"📦 <b>ИНФОРМАЦИЯ О ЛОТЕ</b>\n"
+        f"✨ <b>ИНФОРМАЦИЯ О ЛОТЕ</b> ✨\n"
         f"━━━━━━━━━━━━━━━━━━\n"
         f"🏷 <b>Название:</b> {lot.title}\n"
         f"📝 <b>Описание:</b> {lot.description}\n"
         f"📂 <b>Тип контента:</b> {m_type}\n"
-        f"💰 <b>Стоимость:</b> {lot.price} ЛапКоинов\n"
+        f"🐾 <b>Стоимость:</b> {lot.price} Лапкоинов\n"
         f"━━━━━━━━━━━━━━━━━━\n"
-        f"📊 <b>Статус:</b> {'🟢 Доступен для покупки' if lot.is_active else '🔴 Продан'}"
+        f"📊 <b>Статус:</b> {'🍭 Доступен для покупки' if lot.is_active else '❌ Продан'}"
     )
     
     buttons = []
     if is_mine:
+        if lot.is_active:
+            buttons.append([InlineKeyboardButton(text="🗑 Удалить лот", callback_data=f"confirm_delete_{lot.id}")])
         buttons.append([InlineKeyboardButton(text="⬅️ К списку моих лотов", callback_data="shop_my_lots")])
     else:
         if lot.is_active:
-            buttons.append([InlineKeyboardButton(text=f"💳 Купить за {lot.price} 🪙", callback_data=f"buy_lot_{lot.id}")])
+            buttons.append([InlineKeyboardButton(text=f"💳 Купить за {lot.price} 🐾", callback_data=f"buy_lot_{lot.id}")])
         buttons.append([InlineKeyboardButton(text="⬅️ К витрине партнера", callback_data="shop_partner_lots")])
         
     await callback.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     await callback.answer()
+
+@router.callback_query(F.data.startswith("confirm_delete_"))
+async def confirm_delete_lot(callback: CallbackQuery):
+    lot_id = callback.data.split("_")[2]
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Да, удалить", callback_data=f"delete_lot_{lot_id}")],
+        [InlineKeyboardButton(text="❌ Нет, оставить", callback_data=f"shop_view_my_{lot_id}")]
+    ])
+    await callback.message.edit_text(
+        "⚠️ <b>ПОДТВЕРЖДЕНИЕ</b>\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Ты действительно хочешь удалить этот лот? Это действие нельзя будет отменить.",
+        reply_markup=kb
+    )
+
+@router.callback_query(F.data.startswith("delete_lot_"))
+async def delete_lot_handler(callback: CallbackQuery):
+    lot_id = int(callback.data.split("_")[2])
+    async with async_session() as session:
+        lot = await session.get(Lot, lot_id)
+        if not lot:
+            return await callback.answer("🍭 Лот уже удален!")
+        if lot.owner_id != callback.from_user.id:
+            return await callback.answer("❌ Это не твой лот!", show_alert=True)
+            
+        import logging
+        logging.info(f"Lot deleted: ID={lot.id}, Title='{lot.title}', Owner={lot.owner_id}")
+        
+        await session.delete(lot)
+        await session.commit()
+        
+    await callback.answer("✅ Лот успешно удален!", show_alert=True)
+    await shop_my_lots_text(callback.message)
 
 @router.callback_query(F.data.startswith("buy_lot_"))
 async def buy_lot_callback(callback: CallbackQuery, bot: Bot):
