@@ -18,8 +18,9 @@ class Lot(Base):
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
     price = Column(Integer, nullable=False)
-    media_file_id = Column(String, nullable=True)
+    media_file_id = Column(String, nullable=True) # Will store JSON list of file IDs or texts
     media_type = Column(String, nullable=True) # photo, video, voice, video_note, text
+    media_count = Column(Integer, default=1)
     is_active = Column(Boolean, default=True)
 
 class AssociationWord(Base):

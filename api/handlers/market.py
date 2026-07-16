@@ -1,5 +1,6 @@
+import json
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto, InputMediaVideo
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -7,8 +8,8 @@ from sqlalchemy import select
 
 from api.config import config
 from api.database.connection import async_session
-from api.database.models import Lot
-from api.database.db_queries import get_or_create_user
+from api.database.models import Lot, User
+from api.database.db_queries import get_or_create_user, update_balance
 
 from api.handlers.menu import get_shop_keyboard
 
@@ -23,43 +24,68 @@ class CreateLotState(StatesGroup):
 @router.message(Command("create_lot"))
 @router.message(F.text == "🎀 Создать лот")
 async def create_lot_start(message: Message, state: FSMContext):
+    await state.clear()
     await message.answer(
         "🎀 <b>НОВЫЙ ЛОТ</b>\n"
         "─── ʚ 🎀 ɞ ───\n\n"
-        "Давай создадим что-то особенное! Пришли мне медиафайл (фото, видео, ГС, кружок) или текст, который станет содержимым твоего лота.\n\n"
-        "🎀 Твой партнер будет в восторге!"
+        "Давай создадим что-то особенное! Пришли мне медиафайлы (фото, видео, ГС, кружки) или текст, который станет содержимым твоего лота.\n\n"
+        "✨ <b>Важно:</b> можно отправить несколько файлов одного типа (например, 4 фото). Не смешивай разные типы контента в одном лоте!\n\n"
+        "Когда закончишь отправлять файлы, нажми кнопку ниже 👇",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Файлы отправлены", callback_data="finish_media")]
+        ])
     )
     await state.set_state(CreateLotState.waiting_for_media)
+    await state.update_data(media_list=[], media_type=None)
 
 @router.message(CreateLotState.waiting_for_media)
 async def process_media(message: Message, state: FSMContext):
-    media_file_id = None
-    media_type = "text"
+    data = await state.get_data()
+    media_list = data.get("media_list", [])
+    current_type = data.get("media_type")
+
+    new_file_id = None
+    new_type = None
+
     if message.photo:
-        media_file_id = message.photo[-1].file_id
-        media_type = "photo"
+        new_file_id = message.photo[-1].file_id
+        new_type = "photo"
     elif message.video:
-        media_file_id = message.video.file_id
-        media_type = "video"
+        new_file_id = message.video.file_id
+        new_type = "video"
     elif message.voice:
-        media_file_id = message.voice.file_id
-        media_type = "voice"
+        new_file_id = message.voice.file_id
+        new_type = "voice"
     elif message.video_note:
-        media_file_id = message.video_note.file_id
-        media_type = "video_note"
+        new_file_id = message.video_note.file_id
+        new_type = "video_note"
     elif message.text:
-        media_file_id = message.text
-        media_type = "text"
+        new_file_id = message.text
+        new_type = "text"
     else:
-        await message.answer("🍭 <i>Ой, такой формат я пока не понимаю. Попробуй отправить что-то другое!</i>")
-        return
-    await state.update_data(media_file_id=media_file_id, media_type=media_type)
-    await message.answer(
+        return await message.answer("🍭 <i>Ой, такой формат я пока не понимаю. Попробуй отправить что-то другое!</i>")
+
+    if current_type and new_type != current_type:
+        return await message.answer(f"⚠️ <b>Ошибка!</b>\nТы уже начал(а) добавлять <i>{current_type}</i>. Пожалуйста, не смешивай разные типы контента в одном лоте.")
+
+    media_list.append(new_file_id)
+    await state.update_data(media_list=media_list, media_type=new_type)
+    
+    await message.answer(f"✅ {new_type.capitalize()} №{len(media_list)} добавлено! Можешь отправить еще или нажать кнопку выше.")
+
+@router.callback_query(F.data == "finish_media", CreateLotState.waiting_for_media)
+async def finish_media(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    if not data.get("media_list"):
+        return await callback.answer("⚠️ Ты не отправил(а) ни одного файла!", show_alert=True)
+    
+    await callback.message.answer(
         "🍰 <b>ЗАГОЛОВОК</b>\n"
         "─── ʚ 🍰 ɞ ───\n\n"
         "Придумай милое название для своего лота. Оно будет отображаться в вашем магазине чудес!"
     )
     await state.set_state(CreateLotState.waiting_for_title)
+    await callback.answer()
 
 @router.message(CreateLotState.waiting_for_title)
 async def process_title(message: Message, state: FSMContext):
@@ -88,11 +114,20 @@ async def process_price(message: Message, state: FSMContext):
         return await message.answer("🐾 <i>Котик, введи, пожалуйста, только число!</i>")
     price = int(message.text)
     data = await state.get_data()
+    
     async with async_session() as session:
-        lot = Lot(owner_id=message.from_user.id, title=data['title'], description=data['description'],
-                  price=price, media_file_id=data['media_file_id'], media_type=data['media_type'])
+        lot = Lot(
+            owner_id=message.from_user.id, 
+            title=data['title'], 
+            description=data['description'],
+            price=price, 
+            media_file_id=json.dumps(data['media_list']), 
+            media_type=data['media_type'],
+            media_count=len(data['media_list'])
+        )
         session.add(lot)
         await session.commit()
+        
     await message.answer(
         "🎀 <b>УСПЕХ!</b>\n"
         "─── ʚ 🎀 ɞ ───\n\n"
@@ -132,7 +167,8 @@ async def shop_partner_lots_text(message: Message):
     current_row = []
     for lot in lots:
         icon = type_icons.get(lot.media_type, "🍭")
-        current_row.append(InlineKeyboardButton(text=f"[{icon}] {lot.title}", callback_data=f"shop_view_{lot.id}"))
+        count_str = f"{lot.media_count} " if (lot.media_count or 1) > 1 else ""
+        current_row.append(InlineKeyboardButton(text=f"{count_str}[{icon}] {lot.title}", callback_data=f"shop_view_{lot.id}"))
         if len(current_row) == 2:
             buttons.append(current_row)
             current_row = []
@@ -141,8 +177,8 @@ async def shop_partner_lots_text(message: Message):
     
     await message.answer(
         "🍭 <b>ЛОТЫ ПАРТНЕРА</b>\n"
-        "─── ʚ 🛍️ ɞ ───\n\n"
-        "Нажми на интересующий лот, чтобы узнать подробности и совершить покупку. 👇",
+        "─── ʚ 🍭 ɞ ───\n\n"
+        "Нажми на интересующий лот, чтобы узнать подробности и совершить покупку.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
 
@@ -165,9 +201,9 @@ async def shop_my_lots_text(message: Message):
     
     current_row = []
     for lot in lots:
-        status = "✅" if lot.is_active else "❌"
         icon = type_icons.get(lot.media_type, "🎀")
-        current_row.append(InlineKeyboardButton(text=f"[{icon}] {lot.title}", callback_data=f"shop_view_my_{lot.id}"))
+        count_str = f"{lot.media_count} " if (lot.media_count or 1) > 1 else ""
+        current_row.append(InlineKeyboardButton(text=f"{count_str}[{icon}] {lot.title}", callback_data=f"shop_view_my_{lot.id}"))
         if len(current_row) == 2:
             buttons.append(current_row)
             current_row = []
@@ -202,7 +238,7 @@ async def shop_my_lots(callback: CallbackQuery):
     await callback.answer()
 
 @router.callback_query(F.data.startswith("shop_view_"))
-async def shop_view_lot(callback: CallbackQuery):
+async def shop_view_lot(callback: CallbackQuery, bot: Bot):
     is_mine = callback.data.startswith("shop_view_my_")
     lot_id = int(callback.data.replace("shop_view_my_", "").replace("shop_view_", ""))
     
@@ -212,7 +248,7 @@ async def shop_view_lot(callback: CallbackQuery):
     if not lot:
         return await callback.answer("🍭 Лот не найден!", show_alert=True)
         
-    type_names = {"photo": "Фотография 🖼️", "video": "Видео 🎬", "voice": "Голосовое сообщение 🎙️", "video_note": "Видеосообщение ⭕", "text": "Текст 📝"}
+    type_names = {"photo": "Фотографии 🖼️", "video": "Видео 🎬", "voice": "Голосовые 🎙️", "video_note": "Кружки ⭕", "text": "Тексты 📝"}
     m_type = type_names.get(lot.media_type, "Контент 🍭")
     
     text = (
@@ -220,7 +256,7 @@ async def shop_view_lot(callback: CallbackQuery):
         f"─── ʚ 🍭 ɞ ───\n\n"
         f"🏷 <b>Название:</b> {lot.title}\n"
         f"📝 <b>Описание:</b> {lot.description}\n"
-        f"📂 <b>Тип контента:</b> {m_type}\n"
+        f"📂 <b>Тип:</b> {m_type} ({lot.media_count} шт.)\n"
         f"🐾 <b>Стоимость:</b> {lot.price} Лапкоинов\n\n"
         f"📊 <b>Статус:</b> {'🍭 Доступен' if lot.is_active else '❌ Продан'}"
     )
@@ -237,6 +273,51 @@ async def shop_view_lot(callback: CallbackQuery):
         
     await callback.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     await callback.answer()
+
+@router.callback_query(F.data.startswith("buy_lot_"))
+async def buy_lot(callback: CallbackQuery, bot: Bot):
+    lot_id = int(callback.data.split("_")[2])
+    async with async_session() as session:
+        lot = await session.get(Lot, lot_id)
+        if not lot or not lot.is_active:
+            return await callback.answer("🍭 Этот лот уже недоступен!", show_alert=True)
+            
+        user = await get_or_create_user(session, callback.from_user.id)
+        if user.balance < lot.price:
+            return await callback.answer(f"🐾 Недостаточно Лапкоинов! Нужно еще {lot.price - user.balance}.", show_alert=True)
+            
+        # Deduct balance and deactivate lot
+        user.balance -= lot.price
+        lot.is_active = False
+        await session.commit()
+        
+    await callback.answer("🎉 Поздравляю с покупкой! Сейчас пришлю содержимое.", show_alert=True)
+    
+    # Send content
+    media_ids = json.loads(lot.media_file_id)
+    if lot.media_type == "text":
+        for t in media_ids:
+            await callback.message.answer(t)
+    elif lot.media_type == "photo":
+        if len(media_ids) > 1:
+            media = [InputMediaPhoto(media=m) for m in media_ids]
+            await bot.send_media_group(chat_id=callback.message.chat.id, media=media)
+        else:
+            await bot.send_photo(chat_id=callback.message.chat.id, photo=media_ids[0])
+    elif lot.media_type == "video":
+        if len(media_ids) > 1:
+            media = [InputMediaVideo(media=m) for m in media_ids]
+            await bot.send_media_group(chat_id=callback.message.chat.id, media=media)
+        else:
+            await bot.send_video(chat_id=callback.message.chat.id, video=media_ids[0])
+    elif lot.media_type == "voice":
+        for m in media_ids:
+            await bot.send_voice(chat_id=callback.message.chat.id, voice=m)
+    elif lot.media_type == "video_note":
+        for m in media_ids:
+            await bot.send_video_note(chat_id=callback.message.chat.id, video_note=m)
+
+    await callback.message.answer("✨ Приятного просмотра! Теперь этот лот твой.")
 
 @router.callback_query(F.data.startswith("confirm_delete_"))
 async def confirm_delete_lot(callback: CallbackQuery):
