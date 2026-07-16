@@ -7,10 +7,10 @@ router = Router()
 def get_main_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="� Мой баланс")],
-            [KeyboardButton(text="🍭 Магазин чудес"), KeyboardButton(text="� Создать лот")],
+            [KeyboardButton(text="🐾 Мой баланс")],
+            [KeyboardButton(text="🍭 Магазин чудес"), KeyboardButton(text="🎀 Создать лот")],
             [KeyboardButton(text="🧸 Сыграть в дилеммы"), KeyboardButton(text="☁️ Наши сновидения")],
-            [KeyboardButton(text="🍯 Копилка цитат"), KeyboardButton(text="� Заботливый пинг")]
+            [KeyboardButton(text="🍯 Копилка цитат"), KeyboardButton(text="🧸 Заботливый пинг")]
         ], resize_keyboard=True
     )
 
@@ -18,7 +18,7 @@ def get_shop_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🎁 Посмотреть лоты партнера")],
-            [KeyboardButton(text="� Мои лоты")],
+            [KeyboardButton(text="💖 Мои лоты")],
             [KeyboardButton(text="🌸 Назад")]
         ], resize_keyboard=True
     )
