@@ -157,15 +157,21 @@ async def shop_my_lots_text(message: Message):
     buttons = []
     type_icons = {"photo": "🖼️", "video": "🎬", "voice": "🎙️", "video_note": "⭕", "text": "📝"}
     
+    current_row = []
     for lot in lots:
         status = "🍭" if lot.is_active else "❌"
         icon = type_icons.get(lot.media_type, "🎀")
-        buttons.append([InlineKeyboardButton(text=f"{status} {icon} {lot.title}", callback_data=f"shop_view_my_{lot.id}")])
+        current_row.append(InlineKeyboardButton(text=f"{status} [{icon}]", callback_data=f"shop_view_my_{lot.id}"))
+        if len(current_row) == 3:
+            buttons.append(current_row)
+            current_row = []
+    if current_row:
+        buttons.append(current_row)
     
     await message.answer(
-        "💖 <b>ТВОИ ЛОТЫ</b>\n"
-        "─── ʚ 💖 ɞ ───\n\n"
-        "Твои активные и проданные предложения. Нажми для управления. 👇",
+        "🍭 <b>ТВОИ ЛОТЫ</b>\n"
+        "─── ʚ 🍭 ɞ ───\n\n"
+        "Твои активные и проданные предложения.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
 
