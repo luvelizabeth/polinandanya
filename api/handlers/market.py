@@ -122,7 +122,8 @@ async def shop_partner_lots_text(message: Message):
         return await message.answer(
             "🍭 <b>МАГАЗИН ПАРТНЕРА</b>\n"
             "─── ʚ 🍭 ɞ ───\n\n"
-            "Пока что здесь пусто... Ждем новых поступлений! 🎀"
+            "Пока что здесь пусто.. Но!\n"
+            "Мы ждем новых поступлений!"
         )
         
     buttons = []
