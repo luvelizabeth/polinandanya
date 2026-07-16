@@ -1,4 +1,4 @@
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 
@@ -14,8 +14,36 @@ def get_main_keyboard():
         ], resize_keyboard=True
     )
 
+def get_shop_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🎁 Посмотреть лоты партнера")],
+            [KeyboardButton(text="📦 Мои лоты")],
+            [KeyboardButton(text="⬅️ Назад")]
+        ], resize_keyboard=True
+    )
+
+def get_dreams_keyboard_nav():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📖 Просмотреть сохраненные сны")],
+            [KeyboardButton(text="✍️ Добавить новый сон")],
+            [KeyboardButton(text="⬅️ Назад")]
+        ], resize_keyboard=True
+    )
+
+def get_quotes_keyboard_nav():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📜 Просмотреть цитаты")],
+            [KeyboardButton(text="✍️ Добавить цитату")],
+            [KeyboardButton(text="⬅️ Назад")]
+        ], resize_keyboard=True
+    )
+
 @router.message(Command("start"))
 @router.message(Command("menu"))
+@router.message(F.text == "⬅️ Назад")
 async def show_menu(message: Message):
     await message.answer(
         "👋 <b>Добро пожаловать в главное меню!</b>\n\n"

@@ -10,6 +10,8 @@ from api.database.connection import async_session
 from api.database.models import Lot
 from api.database.db_queries import get_or_create_user
 
+from api.handlers.menu import get_shop_keyboard
+
 router = Router()
 
 class CreateLotState(StatesGroup):
@@ -79,15 +81,48 @@ async def process_price(message: Message, state: FSMContext):
 @router.message(Command("shop"))
 @router.message(F.text == "🛍️ Магазин чудес")
 async def shop_main_menu(message: Message):
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎁 Посмотреть лоты партнера", callback_data="shop_partner_lots")],
-        [InlineKeyboardButton(text="📦 Мои лоты", callback_data="shop_my_lots")],
-        [InlineKeyboardButton(text="❌ Свернуть", callback_data="shop_close")]
-    ])
     await message.answer(
         "🛍️ <b>Магазин чудес</b>\n\n"
         "Здесь ты можешь потратить свои ЛапКоины на лоты партнера или управлять своими собственными лотами.",
-        reply_markup=kb
+        reply_markup=get_shop_keyboard()
+    )
+
+@router.message(F.text == "🎁 Посмотреть лоты партнера")
+async def shop_partner_lots_text(message: Message):
+    partner_id = config.POLINA_ID if message.from_user.id == config.DANILA_ID else config.DANILA_ID
+    async with async_session() as session:
+        result = await session.execute(select(Lot).where(Lot.owner_id == partner_id, Lot.is_active == True))
+        lots = result.scalars().all()
+        
+    if not lots:
+        return await message.answer("🛍️ <b>Магазин партнера пока пуст.</b>\nЖдем новых лотов!")
+        
+    buttons = []
+    for lot in lots:
+        buttons.append([InlineKeyboardButton(text=f"📦 {lot.title} ({lot.price} 🪙)", callback_data=f"shop_view_{lot.id}")])
+    
+    await message.answer(
+        "🛍️ <b>Лоты партнера:</b>\n<i>Выбери лот, чтобы узнать подробности и купить.</i>",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+    )
+
+@router.message(F.text == "📦 Мои лоты")
+async def shop_my_lots_text(message: Message):
+    async with async_session() as session:
+        result = await session.execute(select(Lot).where(Lot.owner_id == message.from_user.id))
+        lots = result.scalars().all()
+        
+    if not lots:
+        return await message.answer("📦 <b>У тебя пока нет созданных лотов.</b>")
+        
+    buttons = []
+    for lot in lots:
+        status = "✅" if lot.is_active else "❌ (продан)"
+        buttons.append([InlineKeyboardButton(text=f"{status} {lot.title}", callback_data=f"shop_view_my_{lot.id}")])
+    
+    await message.answer(
+        "📦 <b>Твои лоты:</b>\n<i>Нажми на лот для просмотра.</i>",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
 
 @router.callback_query(F.data == "shop_main")

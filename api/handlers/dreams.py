@@ -11,6 +11,8 @@ from api.database.connection import async_session
 from api.database.models import Dream
 from api.database.db_queries import update_balance
 
+from api.handlers.menu import get_dreams_keyboard_nav
+
 router = Router()
 
 class DreamState(StatesGroup):
@@ -29,8 +31,16 @@ async def dreams_menu(message: Message):
         "☁️ <b>Дневник сновидений</b>\n\n"
         "Здесь хранятся все наши самые странные, страшные и милые сны. "
         "Хочешь вспомнить, что нам снилось, или записать свежий сон?",
-        reply_markup=get_dreams_keyboard()
+        reply_markup=get_dreams_keyboard_nav()
     )
+
+@router.message(F.text == "📖 Просмотреть сохраненные сны")
+async def show_dreams_text(message: Message):
+    await show_dreams(message)
+
+@router.message(F.text == "✍️ Добавить новый сон")
+async def add_dream_text(message: Message, state: FSMContext):
+    await start_record_dream(message, state)
 
 @router.callback_query(F.data == "close_menu")
 async def close_menu_cb(callback: CallbackQuery):

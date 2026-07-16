@@ -9,6 +9,8 @@ from api.config import config
 from api.database.connection import async_session
 from api.database.models import Quote
 
+from api.handlers.menu import get_quotes_keyboard_nav
+
 router = Router()
 
 class QuoteState(StatesGroup):
@@ -27,8 +29,16 @@ async def quotes_menu(message: Message):
         "💬 <b>Наша копилка цитат</b>\n\n"
         "Сборник наших локальных мемов, смешных фраз и важных слов. "
         "Что будем делать?",
-        reply_markup=get_quotes_keyboard()
+        reply_markup=get_quotes_keyboard_nav()
     )
+
+@router.message(F.text == "📜 Просмотреть цитаты")
+async def show_quotes_text(message: Message):
+    await view_quotes(message)
+
+@router.message(F.text == "✍️ Добавить цитату")
+async def add_quote_text(message: Message, state: FSMContext):
+    await start_add_quote(message, state)
 
 @router.callback_query(F.data == "close_menu")
 async def close_menu_cb(callback: CallbackQuery):
