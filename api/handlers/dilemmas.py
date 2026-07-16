@@ -10,6 +10,9 @@ from api.database.connection import async_session
 from api.database.models import Dilemma
 from api.database.db_queries import get_game_state
 
+from aiogram.exceptions import TelegramBadRequest
+import logging
+
 router = Router()
 
 @router.message(Command("dilemma"))
@@ -41,8 +44,14 @@ async def start_dilemma(message: Message, bot: Bot):
         [InlineKeyboardButton(text=dilemma.option2, callback_data="dil_2")]
     ])
     msg_text = f"🤔 <b>Что бы ты выбрал?</b>\n\n{dilemma.question}"
-    await bot.send_message(config.DANILA_ID, msg_text, reply_markup=kb)
-    await bot.send_message(config.POLINA_ID, msg_text, reply_markup=kb)
+    
+    # Try sending to both users, handle if one hasn't started the bot
+    for user_id in [config.DANILA_ID, config.POLINA_ID]:
+        try:
+            await bot.send_message(user_id, msg_text, reply_markup=kb)
+        except TelegramBadRequest:
+            logging.error(f"Could not send dilemma to {user_id} - chat not found")
+            await message.answer(f"⚠️ Не удалось отправить дилемму одному из партнеров (ID: {user_id}). Убедитесь, что оба запустили бота.")
 
 @router.callback_query(F.data.startswith("dil_"))
 async def handle_dilemma_answer(callback: CallbackQuery, bot: Bot):

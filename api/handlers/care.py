@@ -5,6 +5,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from api.config import config
 
+from aiogram.exceptions import TelegramBadRequest
+import logging
+
 router = Router()
 
 class ReminderState(StatesGroup):
@@ -18,8 +21,20 @@ async def send_ping(message: Message, bot: Bot):
     sender_name = "Даня" if message.from_user.id == config.DANILA_ID else "Полина"
     
     text = f"🫂 <b>Заботливый пинг от {sender_name}!</b>\n\nТебе напоминают, что нужно попить водички, размять спину и улыбнуться! ❤️"
-    await bot.send_message(partner_id, text)
-    await message.answer("✅ <b>Заботливый пинг успешно отправлен!</b>")
+    
+    try:
+        await bot.send_message(partner_id, text)
+        await message.answer("✅ <b>Заботливый пинг успешно отправлен!</b>")
+    except TelegramBadRequest as e:
+        logging.error(f"Failed to send ping to {partner_id}: {e}")
+        await message.answer(
+            "❌ <b>Ошибка при отправке пинга.</b>\n\n"
+            "Скорее всего, партнер еще не запустил бота или заблокировал его. "
+            "Попроси партнера написать /start боту!"
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error in send_ping: {e}")
+        await message.answer("⚠️ Произошла непредвиденная ошибка при отправке пинга.")
 
 @router.message(ReminderState.waiting_for_text)
 async def process_reminder_text(message: Message, state: FSMContext):
