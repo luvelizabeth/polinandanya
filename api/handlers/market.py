@@ -82,8 +82,10 @@ async def process_price(message: Message, state: FSMContext):
 @router.message(F.text == "🛍️ Магазин чудес")
 async def shop_main_menu(message: Message):
     await message.answer(
-        "🛍️ <b>Магазин чудес</b>\n\n"
-        "Здесь ты можешь потратить свои ЛапКоины на лоты партнера или управлять своими собственными лотами.",
+        "✨ <b>МАГАЗИН ЧУДЕС</b> ✨\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Здесь ты можешь обменять накопленные ЛапКоины на уникальные лоты от своего партнера.\n\n"
+        "💠 <i>Выбери действие:</i>",
         reply_markup=get_shop_keyboard()
     )
 
@@ -95,14 +97,23 @@ async def shop_partner_lots_text(message: Message):
         lots = result.scalars().all()
         
     if not lots:
-        return await message.answer("🛍️ <b>Магазин партнера пока пуст.</b>\nЖдем новых лотов!")
+        return await message.answer(
+            "🛍️ <b>МАГАЗИН ПАРТНЕРА</b>\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "Пока что здесь пусто... Ждем новых поступлений! 🎈"
+        )
         
     buttons = []
+    type_icons = {"photo": "🖼️", "video": "🎬", "voice": "🎙️", "video_note": "⭕", "text": "📝"}
+    
     for lot in lots:
-        buttons.append([InlineKeyboardButton(text=f"📦 {lot.title} ({lot.price} 🪙)", callback_data=f"shop_view_{lot.id}")])
+        icon = type_icons.get(lot.media_type, "📦")
+        buttons.append([InlineKeyboardButton(text=f"{icon} {lot.title} — {lot.price} 🪙", callback_data=f"shop_view_{lot.id}")])
     
     await message.answer(
-        "🛍️ <b>Лоты партнера:</b>\n<i>Выбери лот, чтобы узнать подробности и купить.</i>",
+        "🛍️ <b>ЛОТЫ ПАРТНЕРА</b>\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Нажми на интересующий лот, чтобы узнать подробности и совершить покупку. 👇",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
 
@@ -113,15 +124,24 @@ async def shop_my_lots_text(message: Message):
         lots = result.scalars().all()
         
     if not lots:
-        return await message.answer("📦 <b>У тебя пока нет созданных лотов.</b>")
+        return await message.answer(
+            "📦 <b>ТВОИ ЛОТЫ</b>\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "У тебя пока нет созданных лотов. Время что-нибудь придумать! ✨"
+        )
         
     buttons = []
+    type_icons = {"photo": "🖼️", "video": "🎬", "voice": "🎙️", "video_note": "⭕", "text": "📝"}
+    
     for lot in lots:
-        status = "✅" if lot.is_active else "❌ (продан)"
-        buttons.append([InlineKeyboardButton(text=f"{status} {lot.title}", callback_data=f"shop_view_my_{lot.id}")])
+        status = "✅" if lot.is_active else "❌"
+        icon = type_icons.get(lot.media_type, "📦")
+        buttons.append([InlineKeyboardButton(text=f"{status} {icon} {lot.title}", callback_data=f"shop_view_my_{lot.id}")])
     
     await message.answer(
-        "📦 <b>Твои лоты:</b>\n<i>Нажми на лот для просмотра.</i>",
+        "📦 <b>ТВОИ ЛОТЫ</b>\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Твои активные и проданные предложения. Нажми для управления. 👇",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
 
@@ -199,16 +219,27 @@ async def shop_view_lot(callback: CallbackQuery):
     if not lot:
         return await callback.answer("Лот не найден!", show_alert=True)
         
-    text = f"📦 <b>{lot.title}</b>\n\n{lot.description}\n\nЦена: <b>{lot.price} 🪙</b>\n"
-    text += f"Статус: {'✅ Активен' if lot.is_active else '❌ Продан'}"
+    type_names = {"photo": "Фотография 🖼️", "video": "Видео 🎬", "voice": "Голосовое сообщение 🎙️", "video_note": "Видеосообщение ⭕", "text": "Текст 📝"}
+    m_type = type_names.get(lot.media_type, "Контент 📦")
+    
+    text = (
+        f"📦 <b>ИНФОРМАЦИЯ О ЛОТЕ</b>\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"🏷 <b>Название:</b> {lot.title}\n"
+        f"📝 <b>Описание:</b> {lot.description}\n"
+        f"📂 <b>Тип контента:</b> {m_type}\n"
+        f"💰 <b>Стоимость:</b> {lot.price} ЛапКоинов\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"📊 <b>Статус:</b> {'🟢 Доступен для покупки' if lot.is_active else '🔴 Продан'}"
+    )
     
     buttons = []
     if is_mine:
-        buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_my_lots")])
+        buttons.append([InlineKeyboardButton(text="⬅️ К списку моих лотов", callback_data="shop_my_lots")])
     else:
         if lot.is_active:
             buttons.append([InlineKeyboardButton(text=f"💳 Купить за {lot.price} 🪙", callback_data=f"buy_lot_{lot.id}")])
-        buttons.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="shop_partner_lots")])
+        buttons.append([InlineKeyboardButton(text="⬅️ К витрине партнера", callback_data="shop_partner_lots")])
         
     await callback.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     await callback.answer()

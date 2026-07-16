@@ -26,10 +26,11 @@ class AutoBonusMiddleware(BaseMiddleware):
                         await bot.send_message(
                             chat_id=user.id,
                             text=(
-                                f"☀️ <b>С возвращением!</b>\n\n"
-                                f"Ты зашел сюда впервые за сегодня, и я начислил тебе ежедневный бонус!\n\n"
-                                f"🎉 Получено: <b>{amount} ЛапКоинов</b>\n"
-                                f"💰 Твой текущий баланс: <b>{db_user.balance} 🪙</b>"
+                                f"☀️ <b>ЕЖЕДНЕВНЫЙ БОНУС</b>\n"
+                                f"━━━━━━━━━━━━━━━━━━\n"
+                                f"С возвращением! Ты зашел сюда впервые за сегодня, и я начислил тебе подарок.\n\n"
+                                f"🎁 <b>Начислено:</b> <code>{amount}</code> ЛапКоинов\n"
+                                f"💰 <b>Твой баланс:</b> <code>{db_user.balance}</code> 🪙"
                             )
                         )
         return await handler(event, data)

@@ -26,9 +26,10 @@ def get_quotes_keyboard():
 @router.message(F.text == "💬 Копилка цитат")
 async def quotes_menu(message: Message):
     await message.answer(
-        "💬 <b>Наша копилка цитат</b>\n\n"
-        "Сборник наших локальных мемов, смешных фраз и важных слов. "
-        "Что будем делать?",
+        "📜 <b>КОПИЛКА ЦИТАТ</b> 📜\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Сборник наших локальных мемов, смешных фраз и важных слов. Что будем делать?\n\n"
+        "✨ <i>Выбери действие ниже:</i>",
         reply_markup=get_quotes_keyboard_nav()
     )
 
@@ -94,7 +95,12 @@ async def view_quotes(message_or_cb):
         
     if not quotes:
         if isinstance(message_or_cb, CallbackQuery):
-            return await message_or_cb.message.edit_text("📜 <b>Цитатник пока пуст.</b>", reply_markup=kb_back)
+            return await message_or_cb.message.edit_text(
+                "📜 <b>ЦИТАТНИК</b>\n"
+                "━━━━━━━━━━━━━━━━━━\n"
+                "Цитатник пока пуст. Пора добавить что-нибудь легендарное! 💬", 
+                reply_markup=kb_back
+            )
         else:
             return await msg.answer("📜 <b>Цитатник пока пуст.</b>")
             
@@ -107,10 +113,19 @@ async def view_quotes(message_or_cb):
     end_idx = start_idx + quotes_per_page
     page_quotes = quotes[start_idx:end_idx]
     
-    response = f"📜 <b>Наш общий цитатник (Страница {page+1}/{total_pages}):</b>\n\n"
+    response = (
+        f"📖 <b>АРХИВ ЦИТАТ</b>\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"Страница {page+1} из {total_pages}\n\n"
+    )
     for q in page_quotes:
         adder = "Даня" if q.added_by_id == config.DANILA_ID else "Полина"
-        response += f"<i>«{q.text}»</i>\n— <b>{q.author_name}</b> <i>(добавил(а) {adder}, {q.date.strftime('%d.%m.%Y')})</i>\n\n"
+        response += (
+            f"💬 <i>«{q.text}»</i>\n"
+            f"👤 <b>{q.author_name}</b>\n"
+            f"🗓 {q.date.strftime('%d.%m.%Y')} (добавил {adder})\n"
+            f"━━━━━━━━━━━━━━━━━━\n\n"
+        )
     
     nav_buttons = []
     if page > 0:
@@ -134,9 +149,10 @@ async def view_quotes(message_or_cb):
 @router.callback_query(F.data == "quotes_menu")
 async def back_to_quotes_menu(callback: CallbackQuery):
     await callback.message.edit_text(
-        "💬 <b>Наша копилка цитат</b>\n\n"
-        "Сборник наших локальных мемов, смешных фраз и важных слов. "
-        "Что будем делать?",
-        reply_markup=get_quotes_keyboard()
+        "📜 <b>КОПИЛКА ЦИТАТ</b> 📜\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Сборник наших локальных мемов, смешных фраз и важных слов. Что будем делать?\n\n"
+        "✨ <i>Выбери действие ниже:</i>",
+        reply_markup=get_quotes_keyboard_nav()
     )
     await callback.answer()
