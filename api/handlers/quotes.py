@@ -152,7 +152,7 @@ async def back_to_quotes_menu(callback: CallbackQuery):
         "🍯 <b>КОПИЛКА ЦИТАТ</b>\n"
         "─── ʚ 🍯 ɞ ───\n\n"
         "Сборник наших локальных мемов, смешных фраз и важных слов. Что будем делать?\n\n"
-        "✨ <i>Выбери действие ниже:</i>",
+        "🍯 Выбери действие ниже",
         reply_markup=get_quotes_keyboard_nav()
     )
     await callback.answer()

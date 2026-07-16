@@ -159,10 +159,11 @@ async def show_dreams(message_or_cb):
 @router.callback_query(F.data == "dreams_menu")
 async def back_to_dreams_menu(callback: CallbackQuery):
     await callback.message.edit_text(
-        "☁️ <b>Дневник сновидений</b>\n\n"
-        "Здесь хранятся все наши самые странные, страшные и милые сны. "
-        "Хочешь вспомнить, что нам снилось, или записать свежий сон?",
-        reply_markup=get_dreams_keyboard()
+        "☁️ <b>ДНЕВНИК СНОВИДЕНИЙ</b>\n"
+        "─── ʚ ☁️ ɞ ───\n\n"
+        "Здесь хранятся наши самые странные, страшные и милые сны. Хочешь вспомнить прошлое или записать свежий сон?\n\n"
+        "☁️ Выбери действие ниже",
+        reply_markup=get_dreams_keyboard_nav()
     )
     await callback.answer()
 
