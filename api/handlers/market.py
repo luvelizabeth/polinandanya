@@ -103,10 +103,10 @@ async def process_price(message: Message, state: FSMContext):
 @router.message(F.text == "🍭 Магазин чудес")
 async def shop_main_menu(message: Message):
     await message.answer(
-        "✨ <b>МАГАЗИН ЧУДЕС</b>\n"
+        "🍭 <b>МАГАЗИН ЧУДЕС</b>\n"
         "─── ʚ 🍭 ɞ ───\n\n"
-        "Здесь ты можешь обменять накопленные Лапкоины на уникальные лоты от своего партнера.\n\n"
-        "💠 <i>Выбери действие:</i>",
+        "Здесь ты можешь обменять накопленные Лапкоины на уникальные лоты от своего партнера!\n\n"
+        "🍭 <b>Выбери действие</b>",
         reply_markup=get_shop_keyboard()
     )
 
