@@ -65,9 +65,9 @@ async def process_media(message: Message, state: FSMContext):
 async def process_title(message: Message, state: FSMContext):
     await state.update_data(title=message.text)
     await message.answer(
-        "🐝 <b>ОПИСАНИЕ</b>\n"
-        "─── ʚ 🐝 ɞ ───\n\n"
-        "Расскажи немного подробнее, что это за чудо? Твое описание поможет партнеру сделать выбор!"
+        "🍰 <b>ОПИСАНИЕ</b>\n"
+        "─── ʚ 🍰 ɞ ───\n\n"
+        "Расскажи немного подробнее, что это за чудо? Твое описание поможет партнеру сделать выбор"
     )
     await state.set_state(CreateLotState.waiting_for_description)
 
@@ -75,10 +75,10 @@ async def process_title(message: Message, state: FSMContext):
 async def process_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await message.answer(
-        "🍮 <b>СТОИМОСТЬ</b>\n"
-        "─── ʚ 🍮 ɞ ───\n\n"
+        "🍰 <b>СТОИМОСТЬ</b>\n"
+        "─── ʚ 🍰 ɞ ───\n\n"
         "Сколько Лапкоинов должен стоить этот лот?\n"
-        "Введи только число, Лапа!"
+        "Введи только число, Лапонька!"
     )
     await state.set_state(CreateLotState.waiting_for_price)
 
@@ -96,7 +96,7 @@ async def process_price(message: Message, state: FSMContext):
     await message.answer(
         "🎀 <b>УСПЕХ!</b>\n"
         "─── ʚ 🎀 ɞ ───\n\n"
-        "Твой лот успешно создан и уже красуется на витрине! Теперь партнер может его выкупить. 🎀"
+        "Твой лот успешно создан и уже красуется на витрине! Теперь партнер может его выкупить."
     )
     await state.clear()
 
