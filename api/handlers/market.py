@@ -139,7 +139,7 @@ async def shop_partner_lots_text(message: Message):
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
 
-@router.message(F.text == "💖 Мои лоты")
+@router.message(F.text == "🍭 Мои лоты")
 async def shop_my_lots_text(message: Message):
     async with async_session() as session:
         result = await session.execute(select(Lot).where(Lot.owner_id == message.from_user.id))

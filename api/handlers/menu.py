@@ -17,8 +17,8 @@ def get_main_keyboard():
 def get_shop_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🎁 Посмотреть лоты партнера")],
-            [KeyboardButton(text="💖 Мои лоты")],
+            [KeyboardButton(text="� Посмотреть лоты партнера")],
+            [KeyboardButton(text="🍭 Мои лоты")],
             [KeyboardButton(text="🌸 Назад")]
         ], resize_keyboard=True
     )
