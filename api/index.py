@@ -20,6 +20,7 @@ from api.handlers.dilemmas import router as dilemmas_router
 from api.handlers.dreams import router as dreams_router
 from api.handlers.quotes import router as quotes_router
 from api.handlers.care import router as care_router
+from api.handlers.games import router as games_router
 
 # Initialize Bot and Dispatcher
 bot = Bot(token=config.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -43,6 +44,7 @@ dp.include_router(balance_router)
 dp.include_router(dilemmas_router)
 dp.include_router(dreams_router)
 dp.include_router(quotes_router)
+dp.include_router(games_router)
 dp.include_router(associations_router) # should be last if it has generic F.text handler without state
 
 # FastAPI Lifespan

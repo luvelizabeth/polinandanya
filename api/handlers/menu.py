@@ -3,6 +3,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 
 from aiogram.fsm.context import FSMContext
+from api.handlers.games import get_games_keyboard
 
 router = Router()
 
@@ -11,7 +12,8 @@ def get_main_keyboard():
         keyboard=[
             [KeyboardButton(text="🍬 Мой баланс")],
             [KeyboardButton(text="🧸 Сыграть в дилеммы"), KeyboardButton(text="☁️ Наши сновидения")],
-            [KeyboardButton(text="🍯 Копилка цитат"), KeyboardButton(text="🍪 Заботливый пинг")]
+            [KeyboardButton(text="🍯 Копилка цитат"), KeyboardButton(text="🍪 Заботливый пинг")],
+            [KeyboardButton(text="🎮 Игры для пары")]
         ], resize_keyboard=True
     )
 
@@ -44,4 +46,14 @@ async def show_menu(message: Message, state: FSMContext):
         "Добро пожаловать! Здесь собраны все функции для нашего общения. Выбирай раздел ниже\n\n"
         "🌸 <i>Твой уютный помощник готов к работе!</i>",
         reply_markup=get_main_keyboard()
+    )
+
+@router.message(F.text == "🎮 Игры для пары")
+async def show_games(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(
+        "🎮 <b>ИГРЫ ДЛЯ ПАРЫ</b>\n"
+        "─── ʚ 🎮 ɞ ───\n\n"
+        "Выбери игру:",
+        reply_markup=get_games_keyboard()
     )
