@@ -49,6 +49,7 @@ async def close_menu_cb(callback: CallbackQuery):
 @router.callback_query(F.data == "add_quote")
 @router.message(Command("add_quote"))
 async def start_add_quote(message_or_cb, state: FSMContext):
+    await state.clear()
     msg = message_or_cb.message if isinstance(message_or_cb, CallbackQuery) else message_or_cb
     text = (
         "✍️ <b>Добавление новой цитаты</b>\n\n"

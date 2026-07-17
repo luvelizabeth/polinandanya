@@ -15,7 +15,6 @@ from api.middlewares.bonus import AutoBonusMiddleware
 
 from api.handlers.menu import router as menu_router
 from api.handlers.balance import router as balance_router
-from api.handlers.market import router as market_router
 from api.handlers.associations import router as associations_router
 from api.handlers.dilemmas import router as dilemmas_router
 from api.handlers.dreams import router as dreams_router
@@ -40,7 +39,6 @@ dp.update.middleware(AutoBonusMiddleware())
 # Include Routers
 dp.include_router(menu_router)
 dp.include_router(balance_router)
-dp.include_router(market_router)
 dp.include_router(dilemmas_router)
 dp.include_router(dreams_router)
 dp.include_router(quotes_router)
@@ -53,12 +51,6 @@ async def lifespan(app: FastAPI):
     # Initialize DB schema
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Force add media_count if not exists (for Supabase/PostgreSQL)
-        try:
-            from sqlalchemy import text
-            await conn.execute(text("ALTER TABLE lots ADD COLUMN IF NOT EXISTS media_count INTEGER DEFAULT 1"))
-        except:
-            pass
     yield
     await engine.dispose()
 
