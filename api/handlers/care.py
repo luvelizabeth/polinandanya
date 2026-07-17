@@ -19,6 +19,8 @@ class ReminderState(StatesGroup):
     waiting_for_text = State()
     waiting_for_type = State()
     waiting_for_time = State()
+    editing_text = State()
+    editing_time = State()
 
 def get_care_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -154,7 +156,11 @@ async def list_reminders_cb(callback: CallbackQuery):
     for r in reminders:
         local_time = r.send_at + timedelta(hours=3)
         text += f"⏰ <b>{local_time.strftime('%H:%M')}</b>: {r.text[:30]}...\n"
-        buttons.append([InlineKeyboardButton(text=f"🗑 Удалить {local_time.strftime('%H:%M')}", callback_data=f"del_rem_{r.id}")])
+        buttons.append([
+            InlineKeyboardButton(text=f"✏️ Текст", callback_data=f"edit_text_{r.id}"),
+            InlineKeyboardButton(text=f"⏰ Время", callback_data=f"edit_time_{r.id}"),
+            InlineKeyboardButton(text=f"🗑", callback_data=f"del_rem_{r.id}")
+        ])
     
     buttons.append([InlineKeyboardButton(text="🌸 Назад", callback_data="back_to_care")])
     await callback.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
@@ -168,6 +174,95 @@ async def delete_reminder_cb(callback: CallbackQuery):
     
     await callback.answer("Напоминание удалено! 🗑")
     await list_reminders_cb(callback)
+
+@router.callback_query(F.data.startswith("edit_text_"))
+async def edit_reminder_text_cb(callback: CallbackQuery, state: FSMContext):
+    rem_id = int(callback.data.split("_")[2])
+    await state.update_data(reminder_id=rem_id)
+    await callback.message.edit_text(
+        "✏️ <b>Изменить текст напоминания</b>\n\n"
+        "Введи новый текст сообщения:"
+    )
+    await state.set_state(ReminderState.editing_text)
+    await callback.answer()
+
+@router.message(ReminderState.editing_text)
+async def process_edit_text(message: Message, state: FSMContext):
+    data = await state.get_data()
+    rem_id = data['reminder_id']
+    
+    async with async_session() as session:
+        res = await session.execute(
+            select(Reminder).where(
+                Reminder.id == rem_id,
+                Reminder.sender_id == message.from_user.id
+            )
+        )
+        reminder = res.scalar_one_or_none()
+        
+        if not reminder:
+            await message.answer("❌ Напоминание не найдено или уже удалено")
+            await state.clear()
+            return
+        
+        reminder.text = message.text
+        await session.commit()
+    
+    await message.answer(
+        f"✅ <b>Текст обновлен!</b>\n\n"
+        f"📝 <b>Новый текст:</b> {message.text}"
+    )
+    await state.clear()
+
+@router.callback_query(F.data.startswith("edit_time_"))
+async def edit_reminder_time_cb(callback: CallbackQuery, state: FSMContext):
+    rem_id = int(callback.data.split("_")[2])
+    await state.update_data(reminder_id=rem_id)
+    await callback.message.edit_text(
+        "⏰ <b>Изменить время напоминания</b>\n\n"
+        "Введи новое время в формате <code>ЧЧ:ММ</code> (например, 22:00)."
+    )
+    await state.set_state(ReminderState.editing_time)
+    await callback.answer()
+
+@router.message(ReminderState.editing_time)
+async def process_edit_time(message: Message, state: FSMContext):
+    time_str = message.text.strip()
+    if not re.match(r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", time_str):
+        return await message.answer("⚠️ Неверный формат. Пожалуйста, введи время как <code>ЧЧ:ММ</code> (например, 09:30).")
+
+    hours, minutes = map(int, time_str.split(":"))
+    now = datetime.utcnow() + timedelta(hours=3) # MSK
+    target_time = now.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+    
+    if target_time <= now:
+        target_time += timedelta(days=1)
+
+    data = await state.get_data()
+    rem_id = data['reminder_id']
+    
+    async with async_session() as session:
+        res = await session.execute(
+            select(Reminder).where(
+                Reminder.id == rem_id,
+                Reminder.sender_id == message.from_user.id
+            )
+        )
+        reminder = res.scalar_one_or_none()
+        
+        if not reminder:
+            await message.answer("❌ Напоминание не найдено или уже удалено")
+            await state.clear()
+            return
+        
+        reminder.send_at = target_time - timedelta(hours=3) # Store as UTC
+        await session.commit()
+    
+    await message.answer(
+        f"✅ <b>Время обновлено!</b>\n\n"
+        f"⏰ <b>Новое время:</b> {target_time.strftime('%H:%M')}"
+    )
+    await state.clear()
 
 @router.callback_query(F.data == "back_to_care")
 async def back_to_care_cb(callback: CallbackQuery, state: FSMContext):

@@ -1,5 +1,6 @@
 import json
 import random
+import logging
 from fastapi import APIRouter, Request
 from sqlalchemy import select
 
