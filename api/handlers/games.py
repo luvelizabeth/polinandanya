@@ -413,20 +413,39 @@ async def word_guess_menu(message: Message, state: FSMContext):
         "Каждый получит случайное слово и должен угадать слово партнера, задавая вопросы!\n\n"
         "Начать игру?",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🚀 Начать игру", callback_data="start_word_guess")]
+            [InlineKeyboardButton(text="🎀 Начать игру", callback_data="start_word_guess")]
         ])
     )
 
 @router.callback_query(F.data == "start_word_guess")
 async def start_word_guess(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    logging.info(f"Start word guess callback received from user {callback.from_user.id}")
+    
     async with async_session() as session:
+        # Check if we need to fill the database
+        result = await session.execute(select(WordGuessGame))
+        all_words = result.scalars().all()
+        
+        if len(all_words) < 10:
+            logging.info(f"Auto-filling database with {len(WORD_GUESS_WORDS)} words")
+            await session.execute(delete(WordGuessGame))
+            await session.commit()
+            
+            for word, category in WORD_GUESS_WORDS:
+                session.add(WordGuessGame(word=word, category=category))
+            
+            await session.commit()
+            logging.info(f"Database filled with {len(WORD_GUESS_WORDS)} words")
+        
         # Get random words
         result = await session.execute(
             select(WordGuessGame).where(WordGuessGame.is_used == False)
         )
         words = result.scalars().all()
+        logging.info(f"Available words in DB: {len(words)}")
         
         if len(words) < 2:
+            logging.warning(f"Not enough words in DB: {len(words)}")
             await callback.message.edit_text(
                 "😿 <b>Недостаточно слов!</b>\n\n"
                 "Добавьте больше слов в базу данных."
