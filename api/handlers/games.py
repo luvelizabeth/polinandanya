@@ -528,8 +528,23 @@ WORD_GUESS_WORDS = [
 async def word_guess_menu(message: Message, state: FSMContext):
     await state.clear()
     
-    # Check if game is already active
     async with async_session() as session:
+        # Check if we need to fill the database
+        result = await session.execute(select(WordGuessGame))
+        words = result.scalars().all()
+        
+        if len(words) < 10:
+            # Auto-fill database with words
+            await session.execute(delete(WordGuessGame))
+            await session.commit()
+            
+            for word, category in WORD_GUESS_WORDS:
+                session.add(WordGuessGame(word=word, category=category))
+            
+            await session.commit()
+            logging.info(f"Auto-filled database with {len(WORD_GUESS_WORDS)} words")
+        
+        # Check if game is already active
         game_state = await session.execute(
             select(GameState).where(GameState.id == "word_guess")
         )
