@@ -458,19 +458,29 @@ async def start_word_guess(callback: CallbackQuery, state: FSMContext, bot: Bot)
             word.is_used = True
         
         # Initialize game state
-        game_state = GameState(
-            id="word_guess",
-            is_active=True,
-            data=json.dumps({
-                "player1_id": config.DANILA_ID,
-                "player1_word": selected_words[0].word,
-                "player2_id": config.POLINA_ID,
-                "player2_word": selected_words[1].word,
-                "questions": {},
-                "started_at": datetime.utcnow().isoformat()
-            })
-        )
-        session.add(game_state)
+        game_data = json.dumps({
+            "player1_id": config.DANILA_ID,
+            "player1_word": selected_words[0].word,
+            "player2_id": config.POLINA_ID,
+            "player2_word": selected_words[1].word,
+            "questions": {},
+            "started_at": datetime.utcnow().isoformat()
+        })
+        
+        result = await session.execute(select(GameState).where(GameState.id == "word_guess"))
+        game_state = result.scalar_one_or_none()
+        
+        if game_state:
+            game_state.is_active = True
+            game_state.data = game_data
+        else:
+            game_state = GameState(
+                id="word_guess",
+                is_active=True,
+                data=game_data
+            )
+            session.add(game_state)
+            
         await session.commit()
         
         # Send words to players
