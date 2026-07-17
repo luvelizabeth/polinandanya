@@ -37,12 +37,12 @@ dp.update.middleware(AccessMiddleware())
 dp.update.middleware(AutoBonusMiddleware())
 
 # Include Routers
+dp.include_router(care_router) # Moved up so it intercepts specific commands/text before generic ones
 dp.include_router(menu_router)
 dp.include_router(balance_router)
 dp.include_router(dilemmas_router)
 dp.include_router(dreams_router)
 dp.include_router(quotes_router)
-dp.include_router(care_router)
 dp.include_router(associations_router) # should be last if it has generic F.text handler without state
 
 # FastAPI Lifespan
