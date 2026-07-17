@@ -17,45 +17,40 @@ router = Router()
 
 class ReminderState(StatesGroup):
     waiting_for_text = State()
+    waiting_for_type = State()
     waiting_for_time = State()
 
 def get_care_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🍓 Быстрый пинг", callback_data="fast_ping")],
-        [InlineKeyboardButton(text="⏰ Запланировать напоминание", callback_data="add_reminder")],
-        [InlineKeyboardButton(text="📋 Мои напоминания", callback_data="list_reminders")],
+        [InlineKeyboardButton(text="✍️ Создать новое напоминание", callback_data="add_reminder")],
+        [InlineKeyboardButton(text="📋 Мои активные напоминания", callback_data="list_reminders")],
         [InlineKeyboardButton(text="❌ Закрыть", callback_data="close_menu")]
+    ])
+
+def get_reminder_type_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🚀 Отправить прямо сейчас", callback_data="send_now")],
+        [InlineKeyboardButton(text="⏰ Запланировать на время", callback_data="send_later")],
+        [InlineKeyboardButton(text="🌸 Отмена", callback_data="back_to_care")]
     ])
 
 @router.message(Command("care"))
 @router.message(F.text == "🍪 Заботливый пинг")
-async def care_menu(message: Message):
+async def care_menu(message: Message, state: FSMContext):
+    await state.clear()
     await message.answer(
         "🍪 <b>ЗАБОТЛИВЫЙ ПИНГ</b>\n"
         "─── ʚ 🍪 ɞ ───\n\n"
-        "Здесь ты можешь отправить быстрый «кусь» партнеру или запланировать важное напоминание на потом. ✨\n\n"
-        "Что выберешь?",
+        "Здесь ты можешь проявить заботу о партнере: отправить сообщение прямо сейчас или запланировать его на конкретное время. ✨\n\n"
+        "Выбери действие:",
         reply_markup=get_care_keyboard()
     )
-
-@router.callback_query(F.data == "fast_ping")
-async def fast_ping_cb(callback: CallbackQuery, bot: Bot):
-    partner_id = config.POLINA_ID if callback.from_user.id == config.DANILA_ID else config.DANILA_ID
-    sender_name = "Даня" if callback.from_user.id == config.DANILA_ID else "Полина"
-    
-    text = f"🍓 <b>Заботливый пинг от {sender_name}!</b>\n\nТебе напоминают, что нужно попить водички, размять спину и улыбнуться! ✨💖"
-    
-    try:
-        await bot.send_message(partner_id, text)
-        await callback.answer("Пинг отправлен! 🍓")
-    except Exception:
-        await callback.answer("Не удалось отправить пинг 😿", show_alert=True)
 
 @router.callback_query(F.data == "add_reminder")
 async def add_reminder_cb(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
-        "✍️ <b>Создание напоминания</b>\n\n"
-        "Введи текст сообщения, которое получит партнер:"
+        "✍️ <b>Что передать партнеру?</b>\n\n"
+        "Введи текст сообщения. Это может быть что-то милое, напоминание о воде или просто «люблю»."
     )
     await state.set_state(ReminderState.waiting_for_text)
     await callback.answer()
@@ -64,11 +59,46 @@ async def add_reminder_cb(callback: CallbackQuery, state: FSMContext):
 async def process_reminder_text(message: Message, state: FSMContext):
     await state.update_data(text=message.text)
     await message.answer(
-        "⏰ <b>Когда отправить?</b>\n\n"
+        "✨ <b>Текст принят!</b>\n\n"
+        "Когда мы отправим это сообщение?",
+        reply_markup=get_reminder_type_keyboard()
+    )
+    await state.set_state(ReminderState.waiting_for_type)
+
+@router.callback_query(F.data == "send_now", ReminderState.waiting_for_type)
+async def send_now_cb(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    text = data['text']
+    
+    partner_id = config.POLINA_ID if callback.from_user.id == config.DANILA_ID else config.DANILA_ID
+    sender_name = "Дани" if callback.from_user.id == config.DANILA_ID else "Полины"
+    
+    msg_text = (
+        f"💌 <b>Заботливое напоминание от {sender_name}!</b>\n"
+        f"─── ʚ ✨ ɞ ───\n\n"
+        f"{text}"
+    )
+    
+    try:
+        await bot.send_message(partner_id, msg_text)
+        await callback.message.edit_text(f"✅ <b>Отправлено!</b>\n\nПартнер получил твое сообщение: <i>«{text}»</i>")
+        await callback.answer("Успешно отправлено! 🍓")
+    except Exception as e:
+        logging.error(f"Failed to send immediate ping: {e}")
+        await callback.message.edit_text("❌ <b>Ошибка</b>\nНе удалось отправить сообщение. Возможно, партнер заблокировал бота.")
+        await callback.answer("Ошибка отправки 😿", show_alert=True)
+    
+    await state.clear()
+
+@router.callback_query(F.data == "send_later", ReminderState.waiting_for_type)
+async def send_later_cb(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(
+        "⏰ <b>На какое время запланировать?</b>\n\n"
         "Введи время в формате <code>ЧЧ:ММ</code> (например, 22:00).\n"
-        "<i>Напоминание будет запланировано на ближайшее такое время.</i>"
+        "<i>Я отправлю его в ближайшие указанные часы и минуты.</i>"
     )
     await state.set_state(ReminderState.waiting_for_time)
+    await callback.answer()
 
 @router.message(ReminderState.waiting_for_time)
 async def process_reminder_time(message: Message, state: FSMContext):
@@ -99,7 +129,7 @@ async def process_reminder_time(message: Message, state: FSMContext):
 
     await message.answer(
         f"✅ <b>Напоминание запланировано!</b>\n\n"
-        f"📅 <b>Время:</b> {target_time.strftime('%H:%M')}\n"
+        f"⏰ <b>Время:</b> {target_time.strftime('%H:%M')}\n"
         f"📝 <b>Текст:</b> {text}\n\n"
         f"Я отправлю его партнеру точно в срок! ✨"
     )
@@ -140,12 +170,13 @@ async def delete_reminder_cb(callback: CallbackQuery):
     await list_reminders_cb(callback)
 
 @router.callback_query(F.data == "back_to_care")
-async def back_to_care_cb(callback: CallbackQuery):
+async def back_to_care_cb(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
     await callback.message.edit_text(
         "🍪 <b>ЗАБОТЛИВЫЙ ПИНГ</b>\n"
         "─── ʚ 🍪 ɞ ───\n\n"
-        "Здесь ты можешь отправить быстрый «кусь» партнеру или запланировать важное напоминание на потом. ✨\n\n"
-        "Что выберешь?",
+        "Здесь ты можешь проявить заботу о партнере: отправить сообщение прямо сейчас или запланировать его на конкретное время. ✨\n\n"
+        "Выбери действие:",
         reply_markup=get_care_keyboard()
     )
     await callback.answer()
