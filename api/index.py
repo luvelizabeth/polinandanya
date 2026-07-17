@@ -56,6 +56,12 @@ async def lifespan(app: FastAPI):
             await conn.commit()
         except:
             pass
+        # Clear users table to remove old balance columns
+        try:
+            await conn.execute(text("DROP TABLE IF EXISTS users"))
+            await conn.commit()
+        except:
+            pass
     yield
     await engine.dispose()
 
