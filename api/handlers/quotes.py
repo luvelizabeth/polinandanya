@@ -39,6 +39,7 @@ async def show_quotes_text(message: Message):
 
 @router.message(F.text == "✍️ Добавить цитату")
 async def add_quote_text(message: Message, state: FSMContext):
+    await state.clear()
     await start_add_quote(message, state)
 
 @router.callback_query(F.data == "close_menu")

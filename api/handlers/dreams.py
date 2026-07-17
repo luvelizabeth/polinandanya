@@ -43,6 +43,7 @@ async def show_dreams_text(message: Message):
 
 @router.message(F.text == "✍️ Добавить новый сон")
 async def add_dream_text(message: Message, state: FSMContext):
+    await state.clear()
     await start_record_dream(message, state)
 
 @router.callback_query(F.data == "close_menu")
@@ -70,16 +71,18 @@ async def start_record_dream(message_or_cb, state: FSMContext):
     await state.set_state(DreamState.recording)
     await state.update_data(dreams=[])
 
-@router.message(DreamState.recording)
+@router.message(DreamState.recording, F.voice | F.text)
 async def process_dream_msg(message: Message, state: FSMContext):
+    if message.text in ["✅ Сон полностью записан", "🌸 Назад"]:
+        return # Let callback or other handlers handle navigation
+    
     data = await state.get_data()
     dreams = data.get("dreams", [])
     if message.voice:
         dreams.append({"type": "voice", "content": message.voice.file_id})
     elif message.text:
         dreams.append({"type": "text", "content": message.text})
-    else:
-        return await message.answer("⚠️ Пожалуйста, отправляй только текстовые или голосовые сообщения.")
+    
     await state.update_data(dreams=dreams)
     await message.answer("✅ <i>Фрагмент добавлен! Можешь продолжить рассказ или нажать «Сон полностью записан».</i>")
 

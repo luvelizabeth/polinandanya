@@ -2,6 +2,8 @@ from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 
+from aiogram.fsm.context import FSMContext
+
 router = Router()
 
 def get_main_keyboard():
@@ -34,7 +36,8 @@ def get_quotes_keyboard_nav():
 @router.message(Command("start"))
 @router.message(Command("menu"))
 @router.message(F.text == "🌸 Назад")
-async def show_menu(message: Message):
+async def show_menu(message: Message, state: FSMContext):
+    await state.clear()
     await message.answer(
         "🌸 <b>ГЛАВНОЕ МЕНЮ</b>\n"
         "─── ʚ 🌸 ɞ ───\n\n"
