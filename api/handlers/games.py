@@ -14,7 +14,7 @@ import json
 router = Router()
 
 # Word Guessing Game
-@router.message(F.text == "� Угадай слово")
+@router.message(F.text == "🔮 Угадай слово")
 async def word_guess_menu(message: Message, state: FSMContext):
     await state.clear()
     
