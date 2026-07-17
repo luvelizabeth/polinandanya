@@ -22,7 +22,6 @@ async def start_dilemma(message: Message, bot: Bot):
         # Add 150 dilemmas if the list is empty
         res_count = await session.execute(select(Dilemma))
         if not res_count.scalars().all():
-            from api.database.models import Dilemma
             DILEMMAS = [
                 ("В спальне обнаружен огромный летающий таракан. Что делаем?", "Героически сражаюсь с ним тапком", "Запираю комнату и мы спим в гостиной"),
                 ("Партнер приготовил ужин, который тебе совсем не по вкусу. Твоя реакция?", "Честно скажу, но поблагодарю за старания", "Съем через силу, чтобы не обидеть"),
