@@ -26,7 +26,7 @@ async def start_dilemma(message: Message, bot: Bot):
         result = await session.execute(select(Dilemma).where(Dilemma.is_used == False))
         dilemmas = result.scalars().all()
         if not dilemmas:
-            return await message.answer("🍭 <i>Все дилеммы закончились! Пора придумать новые. ✨</i>")
+            return await message.answer("🍭 <b>Все дилеммы закончились!</b>\nПора придумать новые! 🍭")
             
         dilemma = random.choice(dilemmas)
         dilemma.is_used = True
