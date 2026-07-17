@@ -8,8 +8,6 @@ class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
     telegram_id = Column(BigInteger, unique=True, nullable=False)
-    balance = Column(Integer, default=0)
-    last_bonus_date = Column(Date, nullable=True)
 
 class AssociationWord(Base):
     __tablename__ = 'association_words'

@@ -11,7 +11,6 @@ import html
 from api.config import config
 from api.database.connection import async_session
 from api.database.models import Dream
-from api.database.db_queries import update_balance
 
 from api.handlers.menu import get_dreams_keyboard_nav
 
@@ -103,11 +102,9 @@ async def finish_dream(callback: CallbackQuery, state: FSMContext):
         for d in dreams:
             session.add(Dream(user_id=user_id, date=today, content=d["content"], is_voice=(d["type"]=="voice")))
             
-        if is_first:
-            await update_balance(session, user_id, 5)
         await session.commit()
         
-    msg = "✨ <b>Сон успешно сохранен в дневник!</b>" + ("\n\n🎉 За первую запись за сегодня начислено <b>+5 ЛапКоинов</b>!" if is_first else "")
+    msg = "✨ <b>Сон успешно сохранен в дневник!</b>"
     await callback.message.edit_text(msg)
     await callback.answer("Успешно сохранено!", show_alert=False)
     await state.clear()

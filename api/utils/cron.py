@@ -7,7 +7,7 @@ from sqlalchemy import select
 from api.config import config
 from api.database.connection import async_session
 from api.database.models import AssociationWord, Reminder
-from api.database.db_queries import get_game_state, update_balance
+from api.database.db_queries import get_game_state
 from api.utils.weather import get_weather
 from datetime import datetime
 from sqlalchemy import update

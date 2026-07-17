@@ -11,10 +11,8 @@ from aiogram.dispatcher.middlewares.base import BaseMiddleware
 
 from api.config import config
 from api.database.connection import engine, Base, SupabaseStorage
-from api.middlewares.bonus import AutoBonusMiddleware
 
 from api.handlers.menu import router as menu_router
-from api.handlers.balance import router as balance_router
 from api.handlers.associations import router as associations_router
 from api.handlers.dilemmas import router as dilemmas_router
 from api.handlers.dreams import router as dreams_router
@@ -35,12 +33,10 @@ class AccessMiddleware(BaseMiddleware):
         return await handler(event, data)
 
 dp.update.middleware(AccessMiddleware())
-dp.update.middleware(AutoBonusMiddleware())
 
 # Include Routers
 dp.include_router(care_router) # Moved up so it intercepts specific commands/text before generic ones
 dp.include_router(menu_router)
-dp.include_router(balance_router)
 dp.include_router(dilemmas_router)
 dp.include_router(dreams_router)
 dp.include_router(quotes_router)

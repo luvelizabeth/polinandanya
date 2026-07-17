@@ -5,7 +5,7 @@ from aiogram.types import Message
 
 from api.config import config
 from api.database.connection import async_session
-from api.database.db_queries import get_game_state, update_balance
+from api.database.db_queries import get_game_state
 
 router = Router()
 morph = pymorphy3.MorphAnalyzer()
@@ -39,9 +39,7 @@ async def handle_association_answer(message: Message, bot: Bot):
                     state.data = "{}"
                     
                     if ans_danila["normalized"] == ans_polina["normalized"]:
-                        await update_balance(session, config.DANILA_ID, 20)
-                        await update_balance(session, config.POLINA_ID, 20)
-                        await bot.send_message(config.CHAT_ID, f"🎉 <b>Телепатия сработала!</b> 🎉\nСлово: {word}\nОтветы: {ans_danila['raw']} / {ans_polina['raw']}!\n+20 ЛапКоинов каждому!")
+                        await bot.send_message(config.CHAT_ID, f"🎉 <b>Телепатия сработала!</b> 🎉\nСлово: {word}\nОтветы: {ans_danila['raw']} / {ans_polina['raw']}!")
                     else:
                         await bot.send_message(config.CHAT_ID, f"❌ <b>Телепатия не сработала</b> ❌\nСлово: {word}\nДаня: {ans_danila['raw']}\nПолина: {ans_polina['raw']}")
                     await session.commit()
