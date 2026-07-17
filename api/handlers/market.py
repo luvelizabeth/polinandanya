@@ -206,8 +206,8 @@ async def shop_my_lots_text(message: Message):
         
     if not lots:
         return await message.answer(
-            "💖 <b>ТВОИ ЛОТЫ</b>\n"
-            "─── ʚ 💖 ɞ ───\n\n"
+            "🍭 <b>ТВОИ ЛОТЫ</b>\n"
+            "─── ʚ 🍭 ɞ ───\n\n"
             "У тебя пока нет созданных лотов.\n"
             "Время что-нибудь придумать! 💖"
         )
@@ -376,7 +376,8 @@ async def confirm_delete_lot(callback: CallbackQuery):
     await callback.message.edit_text(
         "⚠️ <b>ПОДТВЕРЖДЕНИЕ</b>\n"
         "─── ʚ 🗑 ɞ ───\n\n"
-        "Ты действительно хочешь удалить этот лот? Это действие нельзя будет отменить.",
+        "Ты действительно хочешь удалить этот лот?\n"
+        "Это действие нельзя будет отменить.",
         reply_markup=kb
     )
 
@@ -393,5 +394,10 @@ async def delete_lot_handler(callback: CallbackQuery):
         await session.delete(lot)
         await session.commit()
         
-    await callback.answer("✅ Лот успешно удален!", show_alert=True)
-    await shop_my_lots_text(callback.message)
+    await callback.answer("✅ Лот успешно удален!")
+    await callback.message.edit_text(
+        "🗑️ <b>УДАЛЕНО</b>\n"
+        "─── ʚ 🗑 ɞ ───\n\n"
+        "Лот успешно удален из твоего магазина чудес.",
+        reply_markup=None
+    )
