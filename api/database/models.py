@@ -52,3 +52,13 @@ class FSMData(Base):
     key = Column(String, primary_key=True)
     state = Column(String, nullable=True)
     data = Column(String, default="{}")
+
+class Reminder(Base):
+    __tablename__ = 'reminders'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    sender_id = Column(BigInteger, nullable=False)
+    receiver_id = Column(BigInteger, nullable=False)
+    text = Column(String, nullable=False)
+    send_at = Column(DateTime, nullable=False)
+    is_sent = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

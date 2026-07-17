@@ -5,11 +5,50 @@ from sqlalchemy import select
 
 from api.config import config
 from api.database.connection import async_session
-from api.database.models import AssociationWord
-from api.database.db_queries import get_game_state
+from api.database.models import AssociationWord, Reminder
+from api.database.db_queries import get_game_state, update_balance
 from api.utils.weather import get_weather
+from datetime import datetime
+from sqlalchemy import update
 
 router = APIRouter(prefix="/api/cron")
+
+@router.get("/reminders")
+async def cron_send_reminders(request: Request):
+    bot = request.app.state.bot
+    now = datetime.utcnow()
+    
+    async with async_session() as session:
+        # Get pending reminders that should have been sent by now
+        res = await session.execute(
+            select(Reminder).where(
+                Reminder.send_at <= now,
+                Reminder.is_sent == False
+            )
+        )
+        reminders = res.scalars().all()
+        
+        if not reminders:
+            return {"status": "no reminders to send"}
+            
+        sent_count = 0
+        for r in reminders:
+            sender_name = "Даня" if r.sender_id == config.DANILA_ID else "Полина"
+            msg_text = (
+                f"💌 <b>Заботливое напоминание от {sender_name}!</b>\n"
+                f"─── ʚ ✨ ɞ ───\n\n"
+                f"{r.text}"
+            )
+            try:
+                await bot.send_message(r.receiver_id, msg_text)
+                r.is_sent = True
+                sent_count += 1
+            except Exception as e:
+                logging.error(f"Failed to send reminder {r.id}: {e}")
+        
+        await session.commit()
+    
+    return {"status": "ok", "sent": sent_count}
 
 @router.get("/associations")
 async def cron_associations(request: Request):

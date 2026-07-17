@@ -14,6 +14,10 @@
   ],
   "crons": [
     {
+      "path": "/api/cron/reminders",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron/associations",
       "schedule": "0 11 * * *"
     },

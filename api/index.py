@@ -51,6 +51,13 @@ async def lifespan(app: FastAPI):
     # Initialize DB schema
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Temporary: Clear old dilemmas to load new ones
+        from sqlalchemy import text
+        try:
+            await conn.execute(text("DELETE FROM dilemmas"))
+            await conn.commit()
+        except:
+            pass
     yield
     await engine.dispose()
 
