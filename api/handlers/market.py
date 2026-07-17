@@ -396,8 +396,8 @@ async def delete_lot_handler(callback: CallbackQuery):
         
     await callback.answer("✅ Лот успешно удален!")
     await callback.message.edit_text(
-        "🗑️ <b>УДАЛЕНО</b>\n"
-        "─── ʚ 🗑 ɞ ───\n\n"
+        "💖 <b>УДАЛЕНО</b>\n"
+        "─── ʚ 💖 ɞ ───\n\n"
         "Лот успешно удален из твоего магазина чудес.",
         reply_markup=None
     )
