@@ -63,15 +63,6 @@ class Reminder(Base):
     is_sent = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-class TruthOrDare(Base):
-    __tablename__ = 'truth_or_dare'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    type = Column(String, nullable=False)  # 'truth' or 'dare'
-    category = Column(String, nullable=False)  # 'romance', 'past', 'habits', 'fantasy', 'fun'
-    text = Column(String, nullable=False)
-    difficulty = Column(String, default='medium')  # 'easy', 'medium', 'hard'
-    is_used = Column(Boolean, default=False)
-
 class WordGuessGame(Base):
     __tablename__ = 'word_guess_games'
     id = Column(Integer, primary_key=True, autoincrement=True)
