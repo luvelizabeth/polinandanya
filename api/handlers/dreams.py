@@ -6,6 +6,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from sqlalchemy import select
 
+import html
+
 from api.config import config
 from api.database.connection import async_session
 from api.database.models import Dream
@@ -177,25 +179,64 @@ async def read_dream_cb(callback: CallbackQuery, bot: Bot):
         dreams = res.scalars().all()
     name = "Даня" if u_id == config.DANILA_ID else "Полина"
     
-    text = (
+    header = (
         f"💤 <b>СОН: {name}</b>\n"
         f"📅 <b>Дата:</b> {d_date.strftime('%d.%m.%Y')}\n"
         f"─── ʚ 💤 ɞ ───\n\n"
     )
+    
     voices = []
+    chunks = []
+    current_chunk = header
+    
     for d in dreams:
         if d.is_voice:
             voices.append(d.content)
-        else:
-            text += f"📝 <i>«{d.content}»</i>\n\n"
+            continue
+            
+        content = d.content
+        for i in range(0, len(content), 3800):
+            part = content[i:i+3800]
+            text_part = f"📝 <i>«{html.escape(part)}»</i>\n\n"
+            
+            if len(current_chunk) + len(text_part) > 4000:
+                chunks.append(current_chunk)
+                current_chunk = text_part
+            else:
+                current_chunk += text_part
     
     if voices:
-        text += f"🎙 <b>Голосовые фрагменты:</b> {len(voices)} шт.\n<i>(Будут отправлены ниже)</i>"
+        voice_text = f"🎙 <b>Голосовые фрагменты:</b> {len(voices)} шт.\n<i>(Будут отправлены ниже)</i>"
+        if len(current_chunk) + len(voice_text) > 4000:
+            chunks.append(current_chunk)
+            current_chunk = voice_text
+        else:
+            current_chunk += voice_text
+            
+    if current_chunk:
+        chunks.append(current_chunk)
             
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🌸 К списку снов", callback_data="show_dreams")]])
-    await callback.message.edit_text(text, reply_markup=kb)
     
-    for v in voices:
-        await bot.send_voice(callback.message.chat.id, v)
+    if len(chunks) == 1 and not voices:
+        await callback.message.edit_text(chunks[0], reply_markup=kb)
+    else:
+        await callback.message.edit_text(chunks[0], reply_markup=None)
+        
+        for i in range(1, len(chunks)):
+            is_last = (i == len(chunks) - 1) and not voices
+            await bot.send_message(
+                chat_id=callback.message.chat.id,
+                text=chunks[i],
+                reply_markup=kb if is_last else None
+            )
+            
+        for i, v in enumerate(voices):
+            is_last = (i == len(voices) - 1)
+            await bot.send_voice(
+                chat_id=callback.message.chat.id, 
+                voice=v,
+                reply_markup=kb if is_last else None
+            )
         
     await callback.answer("Сон загружен!")
