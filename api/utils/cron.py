@@ -14,6 +14,51 @@ from sqlalchemy import update
 
 router = APIRouter(prefix="/api/cron")
 
+@router.get("/daily")
+async def cron_daily(request: Request):
+    """Combined daily cron job for Vercel Hobby plan (one cron per day limit)
+    
+    Note: Vercel Hobby plan only allows ONE cron job per day. This endpoint runs at 8:00 MSK
+    and handles all time-based tasks. For precise reminder timing, consider using an external
+    cron service (cron-job.org, EasyCron) to call /api/cron/reminders more frequently.
+    """
+    bot = request.app.state.bot
+    now = datetime.utcnow()
+    hour = (now + timedelta(hours=3)).hour  # MSK hour
+    
+    tasks_executed = []
+    
+    # Send reminders (check every time cron runs)
+    await cron_send_reminders(request)
+    tasks_executed.append("reminders")
+    
+    # Morning weather at 8:00 MSK
+    if hour == 8:
+        await cron_weather_morning(request)
+        tasks_executed.append("weather_morning")
+    
+    # Noon weather check at 12:00 MSK
+    if hour == 12:
+        await cron_weather_check(request)
+        tasks_executed.append("weather_check")
+    
+    # Associations at 11:00 MSK
+    if hour == 11:
+        await cron_associations(request)
+        tasks_executed.append("associations")
+    
+    # Interview at 19:30 MSK (check at 19:00 and 20:00 to catch it)
+    if hour in [19, 20]:
+        minute = (now + timedelta(hours=3)).minute
+        if hour == 19 and minute >= 30:
+            await cron_interview(request)
+            tasks_executed.append("interview")
+        elif hour == 20 and minute < 30:
+            await cron_interview(request)
+            tasks_executed.append("interview")
+    
+    return {"status": "ok", "tasks": tasks_executed, "msk_hour": hour}
+
 @router.get("/reminders")
 async def cron_send_reminders(request: Request):
     bot = request.app.state.bot
